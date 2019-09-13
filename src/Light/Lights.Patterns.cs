@@ -116,7 +116,9 @@ namespace ELS.Light
                                 e.Pattern = _vcfroot.CustomPatterns.Values.ElementAt(CurrentPrmPattern).PatternData[e.Id];
                                 e.Delay = _vcfroot.CustomPatterns.Values.ElementAt(CurrentPrmPattern).PrmDelay;
                                 _prmPatterns = _vcfroot.CustomPatterns.Count;
+#if DEBUG
                                 Utils.DebugWriteLine($"Got custom patterns for extra {e.Id} with {e.Pattern}  at {e.Delay}");
+#endif
                                 break;
                             default:
                                 e.Pattern = Leds.PrimaryPatterns[CurrentPrmPattern][e.Id];
@@ -131,8 +133,9 @@ namespace ELS.Light
                         CitizenFX.Core.Debug.WriteLine($"{e.Id} error {ex.Message}");
                     }
                 }
-
-               Utils.DebugWriteLine($"Current primary pattern is {CurrentPrmPattern}");
+#if DEBUG
+                Utils.DebugWriteLine($"Current primary pattern is {CurrentPrmPattern}");
+#endif
                 if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.GetNetworkId() == _vehicle.GetNetworkId())
                 {
                     if (_vcfroot.PRML.LightingFormat.Equals("custom"))
@@ -211,7 +214,9 @@ namespace ELS.Light
                                 e.Pattern = _vcfroot.CustomPatterns.Values.ElementAt(CurrentSecPattern).PatternData[e.Id];
                                 e.Delay = _vcfroot.CustomPatterns.Values.ElementAt(CurrentSecPattern).SecDelay;
                                 _secPatterns = _vcfroot.CustomPatterns.Count;
+#if DEBUG
                                 Utils.DebugWriteLine($"Got custom patterns for extra {e.Id} with {e.Pattern}  at {e.Delay}");
+#endif
                                 break;
                             default:
                                 e.Pattern = Leds.PrimaryPatterns[CurrentSecPattern][e.Id];
@@ -237,8 +242,9 @@ namespace ELS.Light
                         ElsUiPanel.SetUiDesc(_prefix + CurrentSecPattern.ToString().PadLeft(3, '0'), ExtraEnum.SECL.ToString());
                     }
                 }
-
-                 Utils.DebugWriteLine($"Current secondary pattern is {CurrentSecPattern}");
+#if DEBUG
+                Utils.DebugWriteLine($"Current secondary pattern is {CurrentSecPattern}");
+#endif
             }
         }
 
@@ -290,7 +296,9 @@ namespace ELS.Light
                                 e.Pattern = _vcfroot.CustomPatterns.Values.ElementAt(CurrentWrnPattern).PatternData[e.Id];
                                 e.Delay = _vcfroot.CustomPatterns.Values.ElementAt(CurrentWrnPattern).SecDelay * 1000;
                                 _wrnPatterns = _vcfroot.CustomPatterns.Count;
+#if DEBUG
                                 Utils.DebugWriteLine($"Got custom patterns for extra {e.Id} with {e.Pattern}  at {e.Delay}");
+#endif
                                 break;
                             default:
                                 e.Pattern = Leds.WarningPatterns[CurrentWrnPattern][e.Id];
@@ -316,7 +324,9 @@ namespace ELS.Light
                         ElsUiPanel.SetUiDesc(_prefix + CurrentWrnPattern.ToString().PadLeft(3, '0'), ExtraEnum.WRNL.ToString());
                     }
                 }
+#if DEBUG
                 Utils.DebugWriteLine($"Current warning pattern is {CurrentWrnPattern}");
+#endif
             }
         }
 
@@ -328,11 +338,15 @@ namespace ELS.Light
             CurrentPrmPattern = 0;
             PrmScanPatts = new List<int>();
             if (_stage.PRML.ScanPatternCustomPool.Enabled) {
+#if DEBUG
                 Utils.DebugWriteLine($"Adding Primary Scan pool patterns");
+#endif
                 foreach (int p in _stage.PRML.ScanPatternCustomPool.Pattern)
                 {
                     PrmScanPatts.Add(p);
+#if DEBUG
                     Utils.DebugWriteLine($"Added {p} to primary scan patterns");
+#endif
                 }
                 CurrentPrmPattern = PrmScanPatts[0];
             }

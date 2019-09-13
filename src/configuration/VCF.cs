@@ -51,7 +51,9 @@ namespace ELS.configuration
         {
             foreach (dynamic vcf in VcfData)
             {
+#if DEBUG
                 Utils.DebugWriteLine($"Currently adding {vcf.Item2} from {vcf.Item1}");
+#endif
                 load(SettingsType.Type.VCF, vcf.Item2, vcf.Item3, vcf.Item1);
             }
         }
@@ -85,7 +87,7 @@ namespace ELS.configuration
                 {
                     subNodes.Add(node.Name, node);
                 }
-                #region VCF Info
+#region VCF Info
                 Utils.ReleaseWriteLine($"Parsing VCF Info for vehicle {name}");
                 //VCF Description
                 if (doc.RootNode.GetAttribute("Description") != null)
@@ -99,9 +101,11 @@ namespace ELS.configuration
                     data.root.Author = doc.RootNode.GetAttribute("Author").Value;
                 }
                 #endregion
-                #region Interface
+#region Interface
 
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Interface");
+#endif
                 try
                 {
                     foreach (NanoXMLNode n in subNodes["INTERFACE"].SubNodes)
@@ -129,8 +133,10 @@ namespace ELS.configuration
                 }
                 #endregion
 
-                #region Extras Override
+#region Extras Override
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Extras");
+#endif
 
                 try
                 {
@@ -241,10 +247,12 @@ namespace ELS.configuration
                 {
                     Utils.ReleaseWriteLine($"EOverride for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
-                #endregion
+#endregion
 
-                #region MISC
+#region MISC
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Misc");
+#endif
 
                 try
                 {
@@ -298,10 +306,12 @@ namespace ELS.configuration
                 {
                     Utils.ReleaseWriteLine($"Misc for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
-                #endregion
+#endregion
 
-                #region Cruise
+#region Cruise
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Cruise");
+#endif
                 try
                 {
                     foreach (NanoXMLNode n in subNodes["CRUISE"].SubNodes)
@@ -325,10 +335,12 @@ namespace ELS.configuration
                 {
                     Utils.ReleaseWriteLine($"Cruise for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
-                #endregion
+#endregion
 
-                #region Aux Coronas
+#region Aux Coronas
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Aux Coronas");
+#endif
                 try
                 {
                     foreach (NanoXMLNode n in subNodes["ACORONAS"].SubNodes)
@@ -367,10 +379,12 @@ namespace ELS.configuration
                 {
                     Utils.ReleaseWriteLine($"ACoronas for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
-                #endregion
+#endregion
 
-                #region Sounds
+#region Sounds
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Sounds");
+#endif
                 try
                 {
                     foreach (NanoXMLNode n in subNodes["SOUNDS"].SubNodes)
@@ -421,11 +435,13 @@ namespace ELS.configuration
                 {
                     Utils.ReleaseWriteLine($"Sounds for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
-                #endregion
+#endregion
 
-                #region Warning Lights
+#region Warning Lights
 
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Warning Lights");
+#endif
                 try
                 {
                     data.root.WRNL.LightingFormat = subNodes["WRNL"].GetAttribute("LightingFormat").Value;
@@ -563,11 +579,13 @@ namespace ELS.configuration
                     Utils.ReleaseWriteLine($"Warning lights for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
 
-                #endregion
+#endregion
 
-                #region Primary Lights
+#region Primary Lights
 
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Primary Lights");
+#endif
                 try
                 {
                     data.root.PRML.LightingFormat = subNodes["PRML"].GetAttribute("LightingFormat").Value;
@@ -702,10 +720,12 @@ namespace ELS.configuration
                     Utils.ReleaseWriteLine($"Primary Lights for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
 
-                #endregion
+#endregion
 
-                #region Secondary Lights
+#region Secondary Lights
+#if DEBUG
                 Utils.DebugWriteLine("Parsing Secondary Lights");
+#endif
                 try
                 {
                     data.root.SECL.LightingFormat = subNodes["SECL"].GetAttribute("LightingFormat").Value;
@@ -839,12 +859,14 @@ namespace ELS.configuration
                 {
                     Utils.ReleaseWriteLine($"Secondary Lights for {name} failed to parse due to {e.Message} with inner of {e.InnerException}");
                 }
-                #endregion
+#endregion
 
                 //TODO: add method to remove old file or a file from ELSVehicle
                 if (ELSVehicle.ContainsKey(hash))
                 {
+#if DEBUG
                     Utils.DebugWriteLine($"Removeing preexisting VCF for resource {ResourceName} for {name}");
+#endif
                     ELSVehicle.Remove(hash);
                 }
                 ELSVehicle.Add(hash, data);
@@ -856,7 +878,9 @@ namespace ELS.configuration
         {
             var count = ELSVehicle.Count;
             ELSVehicle.Clear();
+#if DEBUG
             Utils.DebugWriteLine($"Unloaded {count} VCF for {hash}");
+#endif
         }
 
         internal static void ParsePatterns(List<dynamic> patterns)

@@ -22,7 +22,9 @@ namespace ELS.NUI
         internal static void InitData()
         {
             string name = API.GetCurrentResourceName();
+#if DEBUG
             Utils.DebugWriteLine($"Sending Current resouce name {name}");
+#endif
             //API.SendNuiMessage($"{{\"type\":\"initdata\", \"name\":\"{name}\"}}");
             JObject message = new JObject();
             message["type"] = "initdata";
@@ -52,7 +54,9 @@ namespace ELS.NUI
         //Enable full ui control and cursor
         internal static void EnableUI()
         {
+#if DEBUG
             Utils.DebugWriteLine("Enabling UI");
+#endif
             API.SendNuiMessage("{\"type\":\"enableui\", \"enable\":true}");
             API.SetNuiFocus(true, true);
             _enabled = 2;
@@ -62,7 +66,9 @@ namespace ELS.NUI
         //Disable the UI and cursor
         internal static void DisableUI()
         {
+#if DEBUG
             Utils.DebugWriteLine("Disabling Ui");
+#endif
             API.SendNuiMessage("{\"type\":\"enableui\", \"enable\":false}");
             API.SetNuiFocus(false, false);
             _enabled = 0;
@@ -72,7 +78,9 @@ namespace ELS.NUI
         //Show only the UI without focus and cursor
         internal static void ShowUI()
         {
+#if DEBUG
             Utils.DebugWriteLine("Showing Ui");
+#endif
             API.SendNuiMessage("{\"type\":\"enableui\", \"enable\":true}");
             API.SetNuiFocus(false, false);
             _enabled = 1;
@@ -80,7 +88,9 @@ namespace ELS.NUI
 
         internal static void SetEuro(bool euro)
         {
+#if DEBUG
             Utils.DebugWriteLine("Got Euro");
+#endif
             API.SendNuiMessage($"{{\"type\":\"seteuro\", \"euro\":{euro.ToString().ToLower()}}}");
         }
 
@@ -108,7 +118,9 @@ namespace ELS.NUI
 
         internal static void ToggleUiBtnState(bool state, string which)
         {
+#if DEBUG
             Utils.DebugWriteLine($"Setting {which} to {state}");
+#endif
             API.SendNuiMessage($"{{\"type\":\"togglestate\", \"which\":\"{which}\", \"state\":{state.ToString().ToLower()} }}");
         }
 
@@ -125,20 +137,26 @@ namespace ELS.NUI
 
         internal static CallbackDelegate EscapeUI(IDictionary<string, Object> data, CallbackDelegate cb)
         {
+#if DEBUG
             Utils.DebugWriteLine("Escape Executed");
+#endif
             ShowUI();
             return cb;
         }
 
         internal static CallbackDelegate TooglePrimary(IDictionary<string, Object> data, CallbackDelegate cb)
         {
+#if DEBUG
             Utils.DebugWriteLine("Toggle Primary Executed");
+#endif
             return cb;
         }
 
         internal static CallbackDelegate KeyPress(IDictionary<string, Object> data, CallbackDelegate cb)
         {
+#if DEBUG
             Utils.DebugWriteLine("J key pressed");
+#endif
             return cb;
         }
     }

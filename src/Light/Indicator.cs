@@ -71,7 +71,9 @@ namespace ELS.Light
             {
                 if (CurrentIndicatorState(veh) == IndicatorState.Left)
                 {
+#if DEBUG
                     Utils.DebugWriteLine("Toggle Off");
+#endif
                     ToggleInicatorState(veh, IndicatorState.Off);
                     ActivateIndicatorTimer = false;
                     if (Global.BtnClicksIndicators)
@@ -81,7 +83,9 @@ namespace ELS.Light
                     RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
                     return;
                 }
+#if DEBUG
                 Utils.DebugWriteLine("Toggle Left");
+#endif
                 ToggleInicatorState(veh, IndicatorState.Left);
                 if (Global.BtnClicksIndicators)
                 {
@@ -94,7 +98,9 @@ namespace ELS.Light
             {
                 if (CurrentIndicatorState(veh) == IndicatorState.Right)
                 {
+#if DEBUG
                     Utils.DebugWriteLine("Toggle Off");
+#endif
                     ToggleInicatorState(veh, IndicatorState.Off);
                     ActivateIndicatorTimer = false;
                     if (Global.BtnClicksIndicators)
@@ -104,7 +110,9 @@ namespace ELS.Light
                     RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
                     return;
                 }
+#if DEBUG
                 Utils.DebugWriteLine("Toggle Right");
+#endif
                 ToggleInicatorState(veh, IndicatorState.Right);
                 ActivateIndicatorTimer = true;
                 if (Global.BtnClicksIndicators)
@@ -117,7 +125,9 @@ namespace ELS.Light
             {
                 if (CurrentIndicatorState(veh) == IndicatorState.Hazard)
                 {
+#if DEBUG
                     Utils.DebugWriteLine("Toggle Off");
+#endif
                     ToggleInicatorState(veh, IndicatorState.Off);
                     ActivateIndicatorTimer = false;
                     if (Global.BtnClicksIndicators)
@@ -127,7 +137,9 @@ namespace ELS.Light
                     RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
                     return;
                 }
+#if DEBUG
                 Utils.DebugWriteLine("Toggle Hazard");
+#endif
                 ToggleInicatorState(veh, IndicatorState.Hazard);
                 ActivateIndicatorTimer = true;
                 if (Global.BtnClicksIndicators)

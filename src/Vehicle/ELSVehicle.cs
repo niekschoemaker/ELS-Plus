@@ -50,11 +50,12 @@ namespace ELS
             _siren = new Siren.Siren(_vehicle, _vcf, (IDictionary<string, object>)data?["siren"], _light);
             _light.SetGTASirens(false);
             cachedNetId = _vehicle.GetNetworkId();
-
+#if DEBUG
             Utils.DebugWriteLine(API.IsEntityAMissionEntity(_vehicle.Handle).ToString());
             Utils.DebugWriteLine($"ELSVehicle.cs:registering netid:{_vehicle.GetNetworkId()}\n" +
                 $"Does entity belong to this script:{CitizenFX.Core.Native.API.DoesEntityBelongToThisScript(_vehicle.Handle, false)}");
             Utils.DebugWriteLine($"ELSVehicle.cs:created vehicle");
+#endif
         }
         private async void ModelLoaded()
         {
@@ -67,7 +68,9 @@ namespace ELS
         {
             _siren.CleanUP();
             _light.CleanUP();
+#if DEBUG
             Utils.DebugWriteLine("ELSVehicle.cs:running vehicle deconstructor");
+#endif
         }
 
         internal Vehicle GetVehicle { get { return _vehicle; } }
@@ -77,7 +80,7 @@ namespace ELS
             if (!_vehicle.Exists() || _vehicle.IsDead)
             {
                 VehicleManager.vehicleList.Remove(cachedNetId);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId);
+                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, _vehicle.IsDead);
                 return;
             }
             _siren.Ticker();
@@ -89,7 +92,7 @@ namespace ELS
             if (!_vehicle.Exists() || _vehicle.IsDead)
             {
                 VehicleManager.vehicleList.Remove(cachedNetId);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId);
+                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, _vehicle.IsDead);
                 return;
             }
             _light.Ticker();
@@ -106,7 +109,7 @@ namespace ELS
             if (!_vehicle.Exists() || _vehicle.IsDead)
             {
                 VehicleManager.vehicleList.Remove(cachedNetId);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId);
+                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, _vehicle.IsDead);
                 return;
             }            
             _siren.ExternalTicker();
@@ -155,7 +158,7 @@ namespace ELS
                 _light.CleanUP();
                 _siren.CleanUP();
                 _vehicle.SetExistOnAllMachines(false);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId);
+                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, true);
                 API.SetEntityAsMissionEntity(_vehicle.Handle, true, true);
                 VehicleManager.vehicleList.Remove(_vehicle.GetNetworkId());
                 _vehicle.Delete();

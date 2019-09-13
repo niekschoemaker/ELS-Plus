@@ -103,7 +103,9 @@ namespace ELS.Gadgets
                     LadderVerticalIndex = 5;
                     break;
             }
+#if DEBUG
             Utils.DebugWriteLine($"Added Ladder");
+#endif
         }
 
         internal void LadderTicker()

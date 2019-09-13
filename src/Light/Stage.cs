@@ -26,7 +26,9 @@ namespace ELS.Light
             CurrentStage = 0;
             vehicleId = veh;
             ActivationType = acttype.ToLower();
+#if DEBUG
             Utils.DebugWriteLine($"Light Stage activation type is {ActivationType}");
+#endif
         }
 
         internal int CurrentStage

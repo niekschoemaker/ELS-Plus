@@ -31,8 +31,9 @@ namespace ELS.Siren
             _vehicle = vehicle;
             _patternController = patt;
             Function.Call(Hash.DISABLE_VEHICLE_IMPACT_EXPLOSION_ACTIVATION, _vehicle, true);
+#if DEBUG
             Utils.DebugWriteLine(_vehicle.DisplayName);
-
+#endif
             _tones = new Tones
             {
                 horn = new Tone(vcfroot.SOUNDS.MainHorn.AudioString, _vehicle, ToneType.Horn, true),

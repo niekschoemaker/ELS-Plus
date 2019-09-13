@@ -456,14 +456,18 @@ namespace ELS.Light
         internal async void ToggleLightStage()
         {
             await _stage.NextStage(false);
+#if DEBUG
             Utils.DebugWriteLine($"Current Lightstage is {_stage.CurrentStage}");
+#endif
             SetStage();
         }
 
         internal async void ToggleLightStageInverse()
         {
             await _stage.NextStage(true);
+#if DEBUG
             Utils.DebugWriteLine($"Current Inverse Lightstage is {_stage.CurrentStage}");
+#endif
             SetStage();
         }
 

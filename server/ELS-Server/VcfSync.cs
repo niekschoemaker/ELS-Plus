@@ -17,14 +17,18 @@ namespace ELS_Server
 
         public VcfSync()
         {
+#if DEBUG
             Utils.DebugWriteLine("Loading VCF Sync");
+#endif
         }
 
         public async Task CheckVCF(Player player)
         {
             foreach (string name in ElsResources)
             {
+#if DEBUG
                 Utils.DebugWriteLine($"Processing {name} for {player.Name}");
+#endif
                 LoadFilesPromScript(name);
             }
         }
@@ -40,7 +44,9 @@ namespace ELS_Server
                 {
                     ElsResources.Add(name);
                     LoadFilesPromScript(name);
+#if DEBUG
                     Utils.DebugWriteLine($"Added {name} to resources");
+#endif
                 }
 
             }
@@ -59,7 +65,9 @@ namespace ELS_Server
                 var filename = Function.Call<string>(Hash.GET_RESOURCE_METADATA, name, "file", i);
 
                 var data = Function.Call<string>(Hash.LOAD_RESOURCE_FILE, name, filename);
+#if DEBUG
                 Utils.DebugWriteLine($"Checking {filename}");
+#endif
                 if (Path.GetExtension(filename).ToLower() == ".xml")
                 {
                     try
@@ -68,10 +76,12 @@ namespace ELS_Server
                         {
                             VcfData.Add(new Tuple<string, string, string>(name, filename, data));
                         }
+#if DEBUG
                         else
                         {
                             Utils.DebugWriteLine($"XML data for {filename} is not valid");
                         }
+#endif
                     }
                     catch (XMLParsingException e)
                     {

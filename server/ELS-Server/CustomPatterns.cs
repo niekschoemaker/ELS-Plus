@@ -39,7 +39,9 @@ namespace ELS_Server
             {
                 var filename = Function.Call<string>(Hash.GET_RESOURCE_METADATA, name, "file", i);
                 var data = Function.Call<string>(Hash.LOAD_RESOURCE_FILE, name, filename);
+#if DEBUG
                 Utils.DebugWriteLine($"Checking {filename}");
+#endif
                 if (Path.GetExtension(filename).ToLower() == ".xml")
                 {
                     try
@@ -48,14 +50,18 @@ namespace ELS_Server
                         {
                             Patterns.Add(new Tuple<string, string, string>(name, filename, data));
                         }
+#if DEBUG
                         else
                         {
                             Utils.DebugWriteLine($"XML Pattern data for {filename} is not valid");
                         }
+#endif
                     }
                     catch (Exception e)
                     {
+#if DEBUG
                         Utils.DebugWriteLine($"There was a parsing error in {filename} please validate this XML and try again.");
+#endif
                     }
                 }
             }

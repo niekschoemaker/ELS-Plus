@@ -178,7 +178,9 @@ namespace ELS.Extra
             SetInfo();
             PatternType = format;
             TurnedOn = false;
+#if DEBUG
             Utils.DebugWriteLine($"Registered extra_{_Id} successfully");
+#endif
         }
 
         internal void SetState(bool state)
@@ -285,13 +287,17 @@ namespace ELS.Extra
             }
             if (lights._vehicle == null)
             {
+#if DEBUG
                 Utils.DebugWriteLine("Vehicle is null!!!");
+#endif
                 return;
             }
             var off = lights._vehicle.GetPositionOffset(GetBone());
             if (off == null)
             {
+#if DEBUG
                 Utils.DebugWriteLine("Bone is null for some reason!!!");
+#endif
                 return;
             }
             var extraoffset = lights._vehicle.GetOffsetPosition(off + new Vector3(_extraInfo.OffsetX, _extraInfo.OffsetY, _extraInfo.OffsetZ));
@@ -352,7 +358,9 @@ namespace ELS.Extra
                     IsPatternRunning = false;
                     lights.spotLight = new SpotLight(lights);
 
+#if DEBUG
                     Utils.DebugWriteLine("Takedown lights setup");
+#endif
 
                     break;
                 case 12:
@@ -361,9 +369,10 @@ namespace ELS.Extra
                     Pattern = "";
                     IsPatternRunning = false;
                     lights.scene = new Scene(lights);
-                    
 
+#if DEBUG
                     Utils.DebugWriteLine("Scene lights setup");
+#endif
 
                     break;
             }

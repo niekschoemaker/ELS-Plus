@@ -16,10 +16,12 @@ namespace ELS
         /// <param name="data">Data to print in console</param>
         static internal void DebugWrite(string data)
         {
+#if DEBUG
             if (bool.Parse(API.GetConvar("elsplus_debug","false")))
             {
                 CitizenFX.Core.Debug.Write($"ELS-Plus: {data}");
             }
+#endif
 
         }
 
@@ -30,7 +32,7 @@ namespace ELS
         /// /// <param name="args">Arugments to be formated into data</param>
         static internal void DebugWriteLine(string data, [Optional]object[] args)
         {
-
+#if DEBUG
             if (bool.Parse(API.GetConvar("elsplus_debug", "false")))
             {
                 if (args != null)
@@ -42,6 +44,7 @@ namespace ELS
                     CitizenFX.Core.Debug.WriteLine($"ELS-Plus: {data}");
                 }
             }
+#endif
         }
         /// <summary>
         /// Print out a message only if the program is compiled for all release types.

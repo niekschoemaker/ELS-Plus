@@ -62,44 +62,60 @@ namespace ELS_Server
 
             EventHandlers["ELS:VcfSync:Server"] += new Action<int>(async (int source) =>
             {
+#if DEBUG
                 Utils.DebugWriteLine($"Sending Data to {Players[source].Name}");
+#endif
                 TriggerClientEvent(Players[source], "ELS:VcfSync:Client", VcfSync.VcfData);
                 TriggerClientEvent(Players[source], "ELS:PatternSync:Client", CustomPatterns.Patterns);
 
             });
 
-            EventHandlers["ELS:FullSync:RemoveStale"] += new Action<int>(async (int netid) =>
+            EventHandlers["ELS:FullSync:RemoveStale"] += new Action<int, bool>(async (int netid, bool dead) =>
             {
-                _cachedData.Remove(netid);
-                Utils.DebugWriteLine($"Stale vehicle {netid} removed from cache");
+                var entity = API.NetworkGetEntityFromNetworkId(netid);
+
+                if(entity == 0 || dead)
+                {
+                    _cachedData.Remove(netid);
+                }
             });
 
             EventHandlers["baseevents:enteredVehicle"] += new Action<int, int, string>((veh, seat, name) =>
               {
+#if DEBUG
                   Utils.DebugWriteLine("Vehicle Entered");
+#endif
                   TriggerClientEvent("ELS:VehicleEntered", veh);
               });
             EventHandlers["baseevents:leftVehicle"] += new Action<int, int, string>((veh, seat, name) =>
             {
+#if DEBUG
                 Utils.DebugWriteLine("Vehicle Entered");
+#endif
                 TriggerClientEvent("ELS:VehicleExited", veh);
             });
             EventHandlers["ELS:FullSync:Unicast"] += new Action(() => { });
             EventHandlers["ELS:FullSync:Broadcast"] += new Action<System.Dynamic.ExpandoObject, Int16>((dataDic, playerID) =>
              {
                  var dd = (IDictionary<string, object>)dataDic;
+#if DEBUG
                  Utils.DebugWriteLine($"NetworkID {dd["NetworkID"]}");
+#endif
                  _cachedData[int.Parse(dd["NetworkID"].ToString())] = dd;
                  BroadcastMessage(dataDic, playerID);
              });
             EventHandlers["ELS:FullSync:Request:All"] += new Action<int>((int source) =>
             {
+#if DEBUG
                 Utils.DebugWriteLine($"{source} is requesting Sync Data");
+#endif
                 TriggerClientEvent(Players[source], "ELS:FullSync:NewSpawnWithData", _cachedData);
             });
             API.RegisterCommand("resync", new Action<int, System.Collections.IList, string>((a, b, c) =>
             {
+#if DEBUG
                 Utils.DebugWriteLine($"{a}, {b}, {c}");
+#endif
                 TriggerClientEvent(Players[(int.Parse((string)b[0]))], "ELS:FullSync:NewSpawnWithData", _cachedData);
             }), false);
             API.RegisterCommand("clearcache", new Action<int, System.Collections.IList, string>((a, b, c) =>
@@ -140,7 +156,7 @@ namespace ELS_Server
             await ELSServer.Delay(1000);
             Utils.ReleaseWriteLine("Checking for ELS+ Updates in 1");
             await ELSServer.Delay(1000);
-#if DEBUG 
+#if DEBUG
             string updateUrl = "http://localhost";
 #else
             string updateUrl = "http://els-stats.friendsincode.com";

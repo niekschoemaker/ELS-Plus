@@ -9,7 +9,7 @@ namespace ELS
     {
         public static bool IsEls(this Vehicle vehicle)
         {
-            return configuration.VCF.ELSVehicle.ContainsKey(vehicle.Model);
+            return vehicle.IsNetworked() && configuration.VCF.ELSVehicle.ContainsKey(vehicle.Model);
         }
         
         public static bool IsSittingInELSVehicle(this Ped ped)
@@ -25,7 +25,9 @@ namespace ELS
             {
                 await BaseScript.Delay(0);
             }
+#if DEBUG
             Utils.DebugWriteLine("collision loaded");
+#endif
             return true;
         }
         //public static void CleanUp(this PoolObject poolObject)
@@ -46,6 +48,11 @@ namespace ELS
         public static void SetExistOnAllMachines(this Entity entity, bool b)
         {
             Function.Call(Hash.SET_NETWORK_ID_EXISTS_ON_ALL_MACHINES, entity.GetNetworkId(), b);
+        }
+
+        public static bool IsNetworked(this Entity entity)
+        {
+            return API.NetworkGetEntityIsNetworked(entity.Handle);
         }
     }
 }

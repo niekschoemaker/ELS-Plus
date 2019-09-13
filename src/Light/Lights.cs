@@ -284,7 +284,9 @@ namespace ELS.Light
 
         public void LightsControlsRemote()
         {
+#if DEBUG
             Utils.DebugWriteLine("LightsControlsRemote");
+#endif
         }
 
 

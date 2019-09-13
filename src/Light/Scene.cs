@@ -49,8 +49,9 @@ namespace ELS.Light
         {
 
             TurnedOn = bool.Parse(data["TurnedOn"].ToString());
+#if DEBUG
             Utils.DebugWriteLine($"Got scene data for {iLight._vehicle.GetNetworkId()}");
-
+#endif
         }
 
         public void RunTick()

@@ -30,12 +30,6 @@ namespace ELS.Light
 
         public async void Ticker()
         {
-            if (crsLights || prmLights || secLights || wrnLights ||
-                (_extras.TDL != null && _extras.TDL.TurnedOn) || (_extras.SCL != null && _extras.SCL.TurnedOn)
-                && !_vehicle.IsEngineRunning)
-            {
-                _vehicle.IsEngineRunning = true;
-            }
             if (_extras.SBRN != null)
             {
                 _extras.SBRN.ExtraTicker();
@@ -283,13 +277,17 @@ namespace ELS.Light
             Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.ToggleLstg);
             if ((Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleLstg) && !Game.IsControlPressed(0, Control.CharacterWheel)) && Game.CurrentInputMode == InputMode.MouseAndKeyboard || (Global.AllowController && Game.IsControlJustPressed(2, ElsConfiguration.GPBindings.ToggleLstg) && Game.CurrentInputMode == InputMode.GamePad))
             {
+#if DEBUG
                 Utils.DebugWriteLine("Toggle Light stage");
+#endif
                 ToggleLightStage();
                 RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleLstg, _vehicle, true, Game.Player.ServerId);
             }
             else if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleLstg) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
+#if DEBUG
                 Utils.DebugWriteLine("Toggle Light stage Inverse");
+#endif
                 ToggleLightStageInverse();
                 RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleLstg, _vehicle, true, Game.Player.ServerId);
             }

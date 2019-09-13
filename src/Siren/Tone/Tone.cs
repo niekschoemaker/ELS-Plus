@@ -54,24 +54,52 @@ namespace ELS.Siren
 
         internal void SetState(bool state)
         {
-
             _state = state;
             if (_state && AllowUse)
             {
+                if (soundId != -1)
+                {
+                    Audio.StopSound(soundId);
+                    Audio.ReleaseSound(soundId);
+                    if (Audio.HasSoundFinished(soundId))
+                    {
+                        soundId = -1;
+                    }
+                }
                 if (soundId == -1)
                 {
                     soundId = API.GetSoundId();
+                    //Utils.ReleaseWriteLine($"Audio with id of {soundId}, hasFinished: {Audio.HasSoundFinished(soundId)}");
                     if (!Audio.HasSoundFinished(soundId)) return;
-                    Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, soundId, (InputArgument)_file, (InputArgument)_entity.Handle, (InputArgument)0, (InputArgument)0, (InputArgument)0);
-                    Utils.DebugWriteLine($"Started sound with id of {soundId}");
+                    //soundId = Audio.PlaySoundFromEntity(_entity, _file);
+                    API.PlaySoundFromEntity(soundId, _file, _entity.Handle, null, false, 0);
+                    //Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, soundId, (InputArgument)_file, (InputArgument)_entity.Handle, (InputArgument)0, (InputArgument)0, (InputArgument)0);
+                    //Utils.ReleaseWriteLine($"Started sound with id of {soundId}");
                 }
             }
             else
             {
                 Audio.StopSound(soundId);
                 Audio.ReleaseSound(soundId);
-                soundId = -1;
-                Utils.DebugWriteLine($"Stopped and released sound with id of {soundId}");
+                if (Audio.HasSoundFinished(soundId)) {
+                    Utils.ReleaseWriteLine($"Stopped and released sound with id of {soundId}");
+                    soundId = -1;
+                }
+                else
+                {
+                    Utils.ReleaseWriteLine("Siren still playing?");
+                    var _soundId = soundId;
+                    Task.Delay(100).ContinueWith(p =>
+                    {
+                        Audio.StopSound(_soundId);
+                        Audio.ReleaseSound(_soundId);
+                        if (Audio.HasSoundFinished(_soundId) && soundId == _soundId)
+                        {
+                            Utils.ReleaseWriteLine($"Stopped and released sound with id of {soundId}");
+                            soundId = -1;
+                        }
+                    });
+                }
             }
         }
 

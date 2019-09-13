@@ -56,8 +56,10 @@ namespace ELS.configuration
         {
             string vehs = API.GetResourceKvpString("elsplus_savedvehicles");
             string uiSet = API.GetResourceKvpString("elsplus_uisettings");
+#if DEBUG
             Utils.DebugWriteLine($"UserSettings: got ui settings as: {uiSet}");
             Utils.DebugWriteLine($"UserSettings: got vehicle settings as: {vehs}");
+#endif
             if (!String.IsNullOrEmpty(vehs))
             {
                 JArray vehArray = JArray.Parse(vehs);
@@ -109,9 +111,13 @@ namespace ELS.configuration
                 obj.Add("Siren", vehicle.Siren);
                 vehArray.Add(obj);
             }
+#if DEBUG
             Utils.DebugWriteLine($"UserSettings: vehicles json: {vehArray}");
+#endif
             API.SetResourceKvp("elsplus_savedvehicles", vehArray.ToString());
+#if DEBUG
             Utils.DebugWriteLine($"UserSettings: Vehicle Settings Saved: {API.GetResourceKvpString("elsplus_savedvehicles")}");
+#endif
         }
 
         internal async void SaveUI(bool reload)
@@ -120,9 +126,13 @@ namespace ELS.configuration
             obj.Add("currentUI", uiSettings.currentUI.ToString());
             obj.Add("enabled", uiSettings.enabled);
             //string uiSet = JsonConvert.SerializeObject(uiSettings);
+#if DEBUG
             Utils.DebugWriteLine($"UserSettings: ui json: {obj}");
+#endif
             API.SetResourceKvp("elsplus_uisettings", obj.ToString());
+#if DEBUG
             Utils.DebugWriteLine($"UserSettings: Ui Settings Saved: {API.GetResourceKvpString("elsplus_uisettings")}");
+#endif
             if (reload)
             {
                 ElsUiPanel.ReloadUI();

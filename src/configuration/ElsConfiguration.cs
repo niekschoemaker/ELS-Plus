@@ -147,7 +147,9 @@ namespace ELS.configuration
                 Global.BtnClicksBtwnHrnTones = u["AUDIO"]["BtnClicksBtwnHrnTones"].BoolValue;
                 Global.BtnClicksIndicators = u["AUDIO"]["BtnClicksIndicators"].BoolValue;
                 Global.AllowController = u["GAMEPAD"]["AllowController"].BoolValue;
+#if DEBUG
                 Utils.DebugWrite($"Configuration ran \n ---------------------- \n Traffic Control: {Global.EnabeTrafficControl} \n Delay: {Global.PrimDelay} \n Delete Interval: {Global.DeleteInterval} \n Env Lighting Range: {Global.EnvLightRng}\n");
+#endif
             }
         }
         internal class ELSKBControls

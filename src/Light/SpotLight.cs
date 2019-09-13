@@ -78,14 +78,16 @@ namespace ELS.Light
             anglehorizontal = float.Parse(data["horizontal"].ToString());
             angleVertical = float.Parse(data["vertical"].ToString());
             TurnedOn = bool.Parse(data["TurnedOn"].ToString());
+#if DEBUG
             Utils.DebugWriteLine($"Got spotlight data for {lights._vehicle.GetNetworkId()} set horizontal {anglehorizontal} and vertical {angleVertical}");
-
+#endif
         }
 
         public void RunTick()
         {
-           
+#if DEBUG
             Utils.DebugWriteLine($"Spotlight veh handle of {lights._vehicle.Handle}");
+#endif
             if (Game.IsControlPressed(0, Control.PhoneLeft) && Game.PlayerPed.IsSittingInELSVehicle() && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
             {
                 RemoteEventManager.SendEvent(RemoteEventManager.Commands.MoveSpotlightLeft, lights._vehicle, true, Game.Player.ServerId);

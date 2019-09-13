@@ -53,7 +53,9 @@ namespace ELS.Manager
             }
             catch (Exception e)
             {
+#if DEBUG
                 Utils.DebugWriteLine($"VehicleList Error: {e.Message}");
+#endif
             }
         }
 
@@ -95,7 +97,9 @@ namespace ELS.Manager
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
                     Utils.DebugWriteLine($"Exsits Error: {ex.Message} due to {ex.InnerException}");
+#endif
                     //CurrentlyRegisteringVehicle.Remove(NetworkID);
                     vehicle = null;
                     return false;
@@ -136,10 +140,14 @@ namespace ELS.Manager
                     if (handle == 0 && PlayerId != -1)
                     {
                         Player player = new Player(API.GetPlayerFromServerId(PlayerId));
+#if DEBUG
                         Utils.DebugWriteLine($"Registering vehicle with netid of {NetworkID} to list from {player.Name}");
+#endif
                         if (!player.Character.IsSittingInELSVehicle())
                         {
+#if DEBUG
                             Utils.DebugWriteLine($"{player.Name} is not in an Els vehicle");
+#endif
                             vehicle = null;
                             return false;
                         }
@@ -147,21 +155,27 @@ namespace ELS.Manager
                     }
                     else
                     {
+#if DEBUG
                         Utils.DebugWriteLine($"Registering vehicle {NetworkID} to list from netid to veh");
+#endif
                         veh = new ELSVehicle(handle,data);
                     }
                     if (veh != null)
                     {
                         //CurrentlyRegisteringVehicle.Remove(NetworkID);
                         Add(NetworkID, veh);
+#if DEBUG
                         Utils.DebugWriteLine($"Added {NetworkID} to vehicle list");
+#endif
                         vehicle = veh;
                         return true;
                     } 
                     else
                     {
                         //CurrentlyRegisteringVehicle.Remove(NetworkID);
+#if DEBUG
                         Utils.DebugWriteLine("Failed to add vehicle to list please try again");
+#endif
                         vehicle = null;
                         return false;
                     }
@@ -169,7 +183,9 @@ namespace ELS.Manager
                 catch (Exception ex)
                 {
                     //CurrentlyRegisteringVehicle.Remove(NetworkID);
+#if DEBUG
                     Utils.DebugWriteLine($"Exsits Error With Data: {ex.Message}");
+#endif
                     vehicle = null;
                     return false;
                     throw ex;
@@ -178,7 +194,9 @@ namespace ELS.Manager
             }
             else
             {
+#if DEBUG
                 Utils.DebugWriteLine($"Returning vehicle {NetworkID} from list");
+#endif
                 vehicle = this[NetworkID];
                 return true;
             }

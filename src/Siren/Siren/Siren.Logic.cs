@@ -104,7 +104,9 @@ namespace ELS.Siren
                     }
                     if (_mainSiren._enable && dual_siren)
                     {
+#if DEBUG
                         Utils.DebugWriteLine("Setting Dual Siren tone 2");
+#endif
                         _tones.tone4.SetState(false);
                         _tones.tone1.SetState(false);
                         _tones.tone2.SetState(true);
@@ -149,7 +151,9 @@ namespace ELS.Siren
                 }
                 if (_mainSiren._enable && dual_siren)
                 {
+#if DEBUG
                     Utils.DebugWriteLine("Setting Dual Siren tone 3");
+#endif
                     _tones.tone4.SetState(false);
                     _tones.tone1.SetState(false);
                     _tones.tone2.SetState(false);
@@ -189,7 +193,9 @@ namespace ELS.Siren
                 }
                 if (_mainSiren._enable && dual_siren)
                 {
+#if DEBUG
                     Utils.DebugWriteLine("Setting Dual Siren tone 4");
+#endif
                     _tones.tone3.SetState(false);
                     _tones.tone1.SetState(false);
                     _tones.tone2.SetState(false);
@@ -234,7 +240,9 @@ namespace ELS.Siren
                 
                 if (_mainSiren._enable && dual_siren)
                 {
+#if DEBUG
                     Utils.DebugWriteLine("Setting Dual Siren tone 1");
+#endif
                     _tones.tone4.SetState(true);
                     _tones.tone1.SetState(false);
                     _tones.tone2.SetState(false);
@@ -321,7 +329,9 @@ namespace ELS.Siren
                         _tones.tone1.SetState(dual_siren);
                         break;
                 }
+#if DEBUG
                 Utils.DebugWriteLine($"Dual Siren {dual_siren}");
+#endif
             }
             ElsUiPanel.ToggleUiBtnState(dual_siren, "DUAL");
             ElsUiPanel.PlayUiSound("sirenclickoff");

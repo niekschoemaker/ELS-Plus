@@ -42,15 +42,18 @@ namespace ELS
         private static void LoadFilesPromScript(string name)
         {
             int num = Function.Call<int>(Hash.GET_NUM_RESOURCE_METADATA, name, "file");
+#if DEBUG
             Utils.DebugWriteLine($"{num} files for {name}");
+#endif
             for (int i = 0; i < num; i++)
             {
                 var filename = Function.Call<string>(Hash.GET_RESOURCE_METADATA, name, "file", i);
 
                 var data = Function.Call<string>(Hash.LOAD_RESOURCE_FILE, name, filename);
 
-
+#if DEBUG
                 Utils.DebugWriteLine($"Checking {filename}");
+#endif
                 if (filename.Equals("ELS.ini"))
                 {
                     if (configuration.ElsConfiguration.isValidData(data))

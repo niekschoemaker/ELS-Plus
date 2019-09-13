@@ -124,7 +124,9 @@ namespace ELS
             EventHandlers.Add("playerSpawned", new Action(() => { TriggerServerEvent("ELS:FullSync:Request:All", Game.Player.ServerId); }));
             EventHandlers["ELS:VehicleEntered"] += new Action<int>((veh) =>
             {
+#if DEBUG
                 Utils.DebugWriteLine("Vehicle entered checking list");
+#endif
                 Vehicle vehicle = new Vehicle(veh);
                 Delay(1000);                
                 try
@@ -133,30 +135,40 @@ namespace ELS
                     {
                         if ((vehicle.GetNetworkId() == LocalPlayer.Character.CurrentVehicle.GetNetworkId()))
                         {
+#if DEBUG
                             Utils.DebugWriteLine("Vehicle is in list moving on");
                             Utils.DebugWriteLine("ELS Vehicle entered syncing UI");
+#endif
                             lastVehicle = vehicle.GetNetworkId();
                             if (userSettings.uiSettings.enabled)
                             {
                                 ElsUiPanel.ShowUI();
                             }
+                            Utils.ReleaseWriteLine(vehicle.GetNetworkId().ToString());
                             VehicleManager.SyncUI(vehicle.GetNetworkId());
 
                             UserSettings.ELSUserVehicle usrVeh = userSettings.savedVehicles.Find(uveh => uveh.Model == vehicle.Model.Hash && uveh.ServerId == ServerId);
+#if DEBUG
                             Utils.DebugWriteLine($"got usrveh of {usrVeh.Model} on server {usrVeh.ServerId}m");
+#endif
                             if (ServerId.Equals(usrVeh.ServerId))
                             {
+#if DEBUG
                                 Utils.DebugWrite("Got Saved Vehicle Settings applying");
+#endif
                                 VehicleManager.vehicleList[vehicle.GetNetworkId()].SetSaveSettings(usrVeh);
                             }
                             VehicleManager.vehicleList[vehicle.GetNetworkId()].SetInofVeh();
                         }
+#if DEBUG
                         Utils.DebugWriteLine($"Vehicle {vehicle.GetNetworkId()}({Game.PlayerPed.CurrentVehicle.GetNetworkId()}) entered");
+#endif
                     }
                 }
                 catch (Exception e)
                 {
                     Utils.ReleaseWriteLine("Exception caught via vehicle entered");
+                    Utils.ReleaseWriteLine(e.ToString());
                 }
 
             });
@@ -173,11 +185,15 @@ namespace ELS
                             {
                                 VehicleManager.vehicleList[vehicle.GetNetworkId()].DisableSiren();
                             }
+#if DEBUG
                             Utils.DebugWriteLine("save settings for vehicle it");
+#endif
                             VehicleManager.vehicleList[vehicle.GetNetworkId()].GetSaveSettings();
                             VehicleManager.vehicleList[vehicle.GetNetworkId()].SetOutofVeh();
                         }
+#if DEBUG
                         Utils.DebugWriteLine($"Vehicle {vehicle.GetNetworkId()}({Game.PlayerPed.LastVehicle.GetNetworkId()}) exited");
+#endif
                     }
                 }
                 catch (Exception e)
@@ -337,7 +353,7 @@ namespace ELS
             return Function.Call<string>(Hash.GET_CURRENT_RESOURCE_NAME);
         }
 
-        #region Callbacks for GUI
+#region Callbacks for GUI
         public void RegisterNUICallback(string msg, Func<IDictionary<string, object>, CallbackDelegate, CallbackDelegate> callback)
         {
             CitizenFX.Core.Debug.WriteLine($"Registering NUI EventHandler for {msg}");
@@ -356,7 +372,7 @@ namespace ELS
             });
 
         }
-        #endregion
+#endregion
 
         private async Task Class1_Tick()
         {

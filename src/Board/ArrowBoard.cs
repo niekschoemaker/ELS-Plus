@@ -104,7 +104,9 @@ namespace ELS.Board
                     HasBoard = false;
                     break;
             }
+#if DEBUG
             Utils.DebugWriteLine($"Added ArrowBoard of {_boardType}");
+#endif
         }
     }
 
