@@ -7,37 +7,114 @@ using CitizenFX.Core.Native;
 using ELS.Manager;
 using System.Threading.Tasks;
 using ELS.NUI;
+using System.Diagnostics;
+using Shared;
 
 namespace ELS
 {
     public class ELSVehicle : PoolObject, FullSync.IFullSyncComponent
     {
+        public bool Changed { get; set; } = true;
+        internal const float maxDistance = 200.0f;
+        internal const float deactivateDistance = maxDistance + 10.0f;
+        internal const float reactivateDistance = maxDistance - 10.0f;
         private Siren.Siren _siren;
         private Light.Lights _light;
+        private bool Loading = false;
+        internal bool IsInitialized = false;
         private Vehicle _vehicle;
         private Vcfroot _vcf;
+        private int _lastTry = -1000;
+        public bool IsSirenActive = false;
         int lastdrivetime;
         internal int cachedNetId;
 
-        public ELSVehicle(int handle, [Optional]IDictionary<string, object> data) : base(handle)
+        public ELSVehicle(int handle, int netId, [Optional]IDictionary<string, object> data) : base(handle)
         {
-            _vehicle = new Vehicle(handle);
-            ModelLoaded();
+            cachedNetId = netId;
+            if (API.DoesEntityExist(handle))
+            {
+                Init(handle);
+            }
+            else if (netId != 0 && API.NetworkDoesNetworkIdExist(netId))
+            {
+                handle = API.NetToVeh(netId);
+                if (handle == 0)
+                {
+                    handle = API.NetworkGetEntityFromNetworkId(netId);
+                }
+                Init(handle);
+            }
             lastdrivetime = Game.GameTime;
+            _light = new Light.Lights(this, _vcf, (IDictionary<string, object>)data?[DataNames.Light]);
+            _siren = new Siren.Siren(this, _vcf, (IDictionary<string, object>)data?[DataNames.Siren], _light);
+            //_light.SetGTASirens(false);
+            if (cachedNetId == 0)
+            {
+                cachedNetId = _vehicle?.NetworkId ?? 0;
+            }
+#if DEBUG
+            Utils.DebugWriteLine(API.IsEntityAMissionEntity(_vehicle.Handle).ToString());
+            Utils.DebugWriteLine($"ELSVehicle.cs:registering netid:{_vehicle.NetworkId}\n" +
+                $"Does entity belong to this script:{CitizenFX.Core.Native.API.DoesEntityBelongToThisScript(_vehicle.Handle, false)}");
+            Utils.DebugWriteLine($"ELSVehicle.cs:created vehicle");
+#endif
+        }
+        private async void ModelLoaded()
+        {
+            if (!_vehicle.Model.IsInCdImage)
+            {
+                throw new Exception($"ELSVehicle.cs:Vehicle {_vehicle.DisplayName} not found in CdImage");
+            }
+            var start = API.GetGameTimer();
+            Loading = true;
+            while (_vehicle.DisplayName == "CARNOTFOUND" && API.GetGameTimer() - start < 10000)
+            {
+                await CitizenFX.Core.BaseScript.Delay(0);
+            }
+            Loading = false;
+            if (_vehicle.DisplayName == "CARNOTFOUND")
+            {
+                throw new Exception("ELSVehicle.cs:Vehicle loading timed out after 10 seconds");
+            }
+        }
+
+        private void Init(int handle)
+        {
+            if (!API.DoesEntityExist(handle) || Loading)
+            {
+                return;
+            }
+            _vehicle = new Vehicle(handle);
+            if (!Vehicle.Exists(_vehicle))
+            {
+                _vehicle = null;
+                IsInitialized = false;
+                return;
+            }
+            ModelLoaded();
+            API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
             API.SetVehRadioStation(_vehicle.Handle, "OFF");
             API.SetVehicleRadioEnabled(_vehicle.Handle, false);
             if (_vehicle.DisplayName == "CARNOTFOUND")
             {
                 throw new Exception("ELSVehicle.cs:Vehicle not found");
             }
-            else if (_vehicle.GetNetworkId() == 0)
+            else if (_vehicle.NetworkId == 0)
             {
+                if (IsInitialized)
+                {
+                    CleanUP();
+                    IsInitialized = false;
+                }
+                _vehicle = null;
                 throw new Exception("ELSVehicle.cs:NetworkId is 0");
             }
             else if (VCF.ELSVehicle.ContainsKey(_vehicle.Model))
             {
                 _vcf = VCF.ELSVehicle[_vehicle.Model].root;
             }
+
             try
             {
                 Function.Call((Hash)0x5f3a3574, _vehicle.Handle, true);
@@ -46,73 +123,131 @@ namespace ELS
             {
                 Utils.ReleaseWriteLine("ELSVehicle.cs:Repair Fix is not enabled on this client");
             }
-            _light = new Light.Lights(_vehicle, _vcf, (IDictionary<string, object>)data?["light"]);
-            _siren = new Siren.Siren(_vehicle, _vcf, (IDictionary<string, object>)data?["siren"], _light);
-            _light.SetGTASirens(false);
-            cachedNetId = _vehicle.GetNetworkId();
-#if DEBUG
-            Utils.DebugWriteLine(API.IsEntityAMissionEntity(_vehicle.Handle).ToString());
-            Utils.DebugWriteLine($"ELSVehicle.cs:registering netid:{_vehicle.GetNetworkId()}\n" +
-                $"Does entity belong to this script:{CitizenFX.Core.Native.API.DoesEntityBelongToThisScript(_vehicle.Handle, false)}");
-            Utils.DebugWriteLine($"ELSVehicle.cs:created vehicle");
-#endif
+
+            IsInitialized = true;
         }
-        private async void ModelLoaded()
+        internal void CleanUP(bool tooFarAwayCleanup = false)
         {
-            while (_vehicle.DisplayName == "CARNOTFOUND")
-            {
-                await CitizenFX.Core.BaseScript.Delay(0);
-            }
-        }
-        internal void CleanUP()
-        {
-            _siren.CleanUP();
-            _light.CleanUP();
+            _siren.CleanUP(tooFarAwayCleanup);
+            _light.CleanUP(tooFarAwayCleanup);
 #if DEBUG
             Utils.DebugWriteLine("ELSVehicle.cs:running vehicle deconstructor");
 #endif
         }
 
-        internal Vehicle GetVehicle { get { return _vehicle; } }
+        Timer getVehicleTimer = new Timer();
+        internal Vehicle GetVehicle { get {
+                if (!Vehicle.Exists(_vehicle) && getVehicleTimer.Expired && API.NetworkDoesNetworkIdExist(cachedNetId))
+                {
+                    var handle = API.NetworkGetEntityFromNetworkId(cachedNetId);
+                    CitizenFX.Core.Debug.WriteLine($"Attempting to init vehicle: net: {cachedNetId} ({handle})");
+                    Init(handle);
+                    getVehicleTimer.Limit = 2000;
+                }
+                return _vehicle;
+            } }
+
+        internal bool TryGetVehicle(out Vehicle vehicle)
+        {
+            vehicle = GetVehicle;
+            return vehicle != null;
+        }
 
         internal void RunControlTick()
         {
-            if (!_vehicle.Exists() || _vehicle.IsDead)
+            if (!IsInitialized || !Vehicle.Exists(_vehicle))
             {
-                VehicleManager.vehicleList.Remove(cachedNetId);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, _vehicle.IsDead);
-                return;
+                if (Game.GameTime - _lastTry > 1000)
+                {
+                    _vehicle = null;
+                    if (API.NetworkDoesNetworkIdExist(cachedNetId))
+                    {
+                        Init(API.NetworkGetEntityFromNetworkId(cachedNetId));
+                    }
+                    else
+                    {
+                        _lastTry = Game.GameTime;
+                        return;
+                    }
+                }
+                else
+                {
+                    return;
+                }
             }
-            _siren.Ticker();
+            _siren.ControlTicker(_light);
             _light.ControlTicker();
         }
 
+        DateTime lastRemovalTry = DateTime.Now;
+        bool oldSirenState = false;
         internal void RunTick()
         {
-            if (!_vehicle.Exists() || _vehicle.IsDead)
+            if (!IsInitialized || !Vehicle.Exists(_vehicle))
             {
-                VehicleManager.vehicleList.Remove(cachedNetId);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, _vehicle.IsDead);
+                if (Game.GameTime - _lastTry > 1000)
+                {
+                    _vehicle = null;
+                    IsInitialized = false;
+                    if (API.NetworkDoesNetworkIdExist(cachedNetId))
+                    {
+                        _lastTry = Game.GameTime;
+                        Init(API.NetworkGetEntityFromNetworkId(cachedNetId));
+                    }
+                    else
+                    {
+                        _lastTry = Game.GameTime;
+                        return;
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+            if (!IsInitialized || !Vehicle.Exists(_vehicle))
+            {
                 return;
             }
+
+            Function.Call(Hash._SET_DISABLE_VEHICLE_SIREN_SOUND, _vehicle.Handle, true);
+            var distance = Vector3.Distance(ELS.position, _vehicle.Position);
+            if (distance > deactivateDistance && IsSirenActive)
+            {
+                Utils.ReleaseWriteLine($"Stopping siren for netId {cachedNetId}");
+                oldSirenState = true;
+#if SIREN
+                _vehicle.IsSirenActive = false;
+#endif
+                IsSirenActive = false;
+            }
+            else if (distance < reactivateDistance && oldSirenState)
+            {
+                Utils.ReleaseWriteLine($"Starting siren for netId {cachedNetId}");
+                oldSirenState = false;
+                IsSirenActive = true;
+#if SIREN
+                _vehicle.IsSirenActive = true;
+#endif
+            }
+
+            if (distance < reactivateDistance)
+            {
+                _siren.Ticker();
+            }
+            else if (distance > deactivateDistance)
+            {
+                CleanUP(true);
+            }
+
             _light.Ticker();
-            
+
             if (_siren._mainSiren._enable && _light._stage.CurrentStage != 3)
             {
+                Utils.DeveloperWriteLine("Disabling siren because stage not 3");
                 _siren._mainSiren.SetEnable(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, this, true);
             }
-        }
-
-        internal void RunExternalTick()
-        {
-            if (!_vehicle.Exists() || _vehicle.IsDead)
-            {
-                VehicleManager.vehicleList.Remove(cachedNetId);
-                ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, _vehicle.IsDead);
-                return;
-            }            
-            _siren.ExternalTicker();
         }
 
         internal Vector3 GetBonePosistion()
@@ -130,7 +265,7 @@ namespace ELS
 
         public override bool Exists()
         {
-            return CitizenFX.Core.Native.Function.Call<bool>(CitizenFX.Core.Native.Hash.DOES_ENTITY_EXIST, _vehicle);
+            return Vehicle.Exists(_vehicle) || cachedNetId != 0;
         }
 
         public void DisableSiren()
@@ -138,7 +273,7 @@ namespace ELS
             if (_siren._mainSiren._enable)
             {
                 _siren._mainSiren.SetEnable(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, this, true);
             }
             if (_siren.dual_siren)
             {
@@ -146,7 +281,7 @@ namespace ELS
                 _siren._tones.tone2.SetState(false);
                 _siren._tones.tone3.SetState(false);
                 _siren._tones.tone4.SetState(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.DualSiren, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.DualSiren, this, true);
             }
         }
 
@@ -160,7 +295,7 @@ namespace ELS
                 _vehicle.SetExistOnAllMachines(false);
                 ELS.TriggerServerEvent("ELS:FullSync:RemoveStale", cachedNetId, true);
                 API.SetEntityAsMissionEntity(_vehicle.Handle, true, true);
-                VehicleManager.vehicleList.Remove(_vehicle.GetNetworkId());
+                VehicleManager.vehicleList.Remove(_vehicle.NetworkId);
                 _vehicle.Delete();
             }
             catch (Exception e)
@@ -169,19 +304,27 @@ namespace ELS
             }
         }
 
-        internal void UpdateRemoteSiren(string command, bool state)
+        readonly Timer lastNetworkTime = new Timer();
+        public int NetworkId
         {
-            _siren.SirenControlsRemote(command, state);
-        }
-
-        internal void UpdateRemoteLights()
-        {
-            _light.LightsControlsRemote();
+            get
+            {
+                if (cachedNetId == 0 && Vehicle.Exists(_vehicle) && _vehicle.IsNetworked() && lastNetworkTime.Expired)
+                {
+                    lastNetworkTime.Limit = 2000;
+                    var netId = _vehicle.NetworkId;
+                    if (API.NetworkDoesNetworkIdExist(netId) && netId != _vehicle.Handle)
+                    {
+                        cachedNetId = netId;
+                    }
+                }
+                return cachedNetId;
+            }
         }
 
         internal int GetNetworkId()
         {
-            return _vehicle.GetNetworkId();
+            return NetworkId;
         }
         /// <summary>
         /// Proxies sync data to the lighting and siren sub components
@@ -189,46 +332,35 @@ namespace ELS
         /// <param name="dataDic"></param>
         public void SetData(IDictionary<string, object> data)
         {
-            _siren.SetData((IDictionary<string, object>)data["siren"]);
-            _light.SetData((IDictionary<string, object>)data["light"]);
+            if (data.TryGetValue(DataNames.Siren, out var siren))
+            {
+                _siren.SetData((IDictionary<string, object>)siren);
+            }
+
+            if (data.TryGetValue(DataNames.Light, out var light))
+            {
+                _light.SetData((IDictionary<string, object>)light);
+            }
+        }
+
+        public void SetLightData(IDictionary<string, object> data)
+        {
+            _siren.SetData(data);
+        }
+
+        public void SetSirenData(IDictionary<string, object> data)
+        {
+            _light.SetData(data);
         }
 
         public Dictionary<string, object> GetData()
         {
             Dictionary<string, object> vehDic = new Dictionary<string, object>
             {
-                {"siren",_siren.GetData() },
-                {"light",_light.GetData() },
-                {"NetworkID",_vehicle.GetNetworkId() }
+                {DataNames.Siren, _siren.GetData() },
+                {DataNames.Light, _light.GetData() }
             };
             return vehDic;
-        }
-
-        internal void SetSaveSettings(UserSettings.ELSUserVehicle veh)
-        {
-            _light.CurrentPrmPattern = veh.PrmPatt;
-            _light.CurrentSecPattern = veh.SecPatt;
-            _light.CurrentWrnPattern = veh.WrnPatt;
-            
-            VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangePrmPatt, this.GetNetworkId(), Game.Player.ServerId);
-            VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeSecPatt, this.GetNetworkId(), Game.Player.ServerId);
-            VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeWrnPatt, this.GetNetworkId(), Game.Player.ServerId);
-            switch(veh.Siren)
-            {
-                case "WL":
-                    _siren._mainSiren.setMainTone(_siren._tones.tone1);
-                    break;
-                case "YP":
-                    _siren._mainSiren.setMainTone(_siren._tones.tone2);
-                    break;
-                case "A1":
-                    _siren._mainSiren.setMainTone(_siren._tones.tone3);
-                    break;
-                case "A2":
-                    _siren._mainSiren.setMainTone(_siren._tones.tone4);
-                    break;
-            }
-            VehicleManager.SyncRequestReply(RemoteEventManager.Commands.MainSiren, this.GetNetworkId(), Game.Player.ServerId);
         }
 
         internal void GetSaveSettings()
@@ -239,7 +371,7 @@ namespace ELS
                 PrmPatt = _light.CurrentPrmPattern,
                 SecPatt = _light.CurrentSecPattern,
                 WrnPatt = _light.CurrentWrnPattern,
-                Siren = _siren._mainSiren.currentTone.Type,
+                Siren = _siren._mainSiren.MainTones[_siren._mainSiren.currentTone].Type,
                 Model = _vehicle.Model.Hash
             };
             ELS.userSettings.SaveVehicles(veh);
@@ -250,37 +382,44 @@ namespace ELS
             if (_vcf.PRML.ForcedPatterns.OutOfVeh.Enabled)
             {
                 _light.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.OutOfVeh.IntPattern;
-                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangePrmPatt, this.GetNetworkId(), Game.Player.ServerId);
+                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangePrmPatt, NetworkId);
             }
             if (_vcf.SECL.ForcedPatterns.OutOfVeh.Enabled)
             {
                 _light.CurrentSecPattern = _vcf.SECL.ForcedPatterns.OutOfVeh.IntPattern;
-                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeSecPatt, this.GetNetworkId(), Game.Player.ServerId);
+                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeSecPatt, NetworkId);
             }
             if (_vcf.WRNL.ForcedPatterns.OutOfVeh.Enabled)
             {
                 _light.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.OutOfVeh.IntPattern;
-                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeWrnPatt, this.GetNetworkId(), Game.Player.ServerId);
+                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeWrnPatt, NetworkId);
             }
         }
 
-        internal void SetInofVeh()
+        internal void SetInofVeh(bool skipSync = false)
         {
+            bool send = false;
             if (_vcf.PRML.ForcedPatterns.OutOfVeh.Enabled)
             {
                 _light.CurrentPrmPattern = _light._oldprm;
-                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangePrmPatt, this.GetNetworkId(), Game.Player.ServerId);
+                send = true;
             }
             if (_vcf.SECL.ForcedPatterns.OutOfVeh.Enabled)
             {
                 _light.CurrentSecPattern = _light._oldsec;
-                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeSecPatt, this.GetNetworkId(), Game.Player.ServerId);
+                send = true;
             }
             if (_vcf.WRNL.ForcedPatterns.OutOfVeh.Enabled)
             {
                 _light.CurrentWrnPattern = _light._oldwrn;
-                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangeWrnPatt, this.GetNetworkId(), Game.Player.ServerId);
+                send = true;
             }
+            if (send && !skipSync)
+            {
+                Utils.DeveloperWriteLine("SyncRequestReply invoked from ELSVehicle::SetInofVehicle 446");
+                VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangePrmPatt, NetworkId);
+            }
+            
         }
     }
 }

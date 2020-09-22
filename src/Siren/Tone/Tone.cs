@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CitizenFX.Core;
+﻿using CitizenFX.Core;
 using CitizenFX.Core.Native;
 
 namespace ELS.Siren
@@ -21,17 +16,21 @@ namespace ELS.Siren
     {
 
         private readonly string _file;
-        private int soundId;
-        private Entity _entity;
-        private readonly ToneType _type;
+        private readonly string _soundSet;
+        private readonly ELSVehicle _entity;
+        private int soundId = -2;
         internal string Type;
-        internal bool _state { private set; get; }
+
+        internal bool State { private set; get; }
         internal bool AllowUse { get; set; }
-        internal Tone(string file, Entity entity, ToneType type, bool allow, bool state = false)
+        internal int LastVehicle { get; set; }
+
+        internal Tone(string file, ELSVehicle entity, ToneType type, bool allow, bool state = false, string soundSet = null)
         {
             _entity = entity;
             _file = file;
-            _type = type;
+            _soundSet = soundSet;
+            Utils.ReleaseWriteLine($"siren: {type}; soundSet: {soundSet}");
             SetState(state);
             AllowUse = allow;
             switch (type)
@@ -49,67 +48,88 @@ namespace ELS.Siren
                     Type = "A2";
                     break;
             }
-            soundId = -1;
+            soundId = -2;
+        }
+
+        internal void RunTick()
+        {
+            var vehicle = _entity.GetVehicle;
+            if (!Vehicle.Exists(vehicle))
+            {
+                if (soundId != -2)
+                {
+                    CleanUp();
+                }
+            }
+            if (State && AllowUse && soundId == -2)
+            {
+                soundId = API.GetSoundId();
+                API.PlaySoundFromEntity(soundId, _file, vehicle.Handle, _soundSet, false, 0);
+            }
         }
 
         internal void SetState(bool state)
         {
-            _state = state;
-            if (_state && AllowUse)
+            var vehicle = _entity.GetVehicle;
+            State = state;
+            if (vehicle == null)
             {
-                if (soundId != -1)
+                return;
+            }
+
+            if (State && AllowUse)
+            {
+                if (soundId != -2)
                 {
                     Audio.StopSound(soundId);
                     Audio.ReleaseSound(soundId);
-                    if (Audio.HasSoundFinished(soundId))
-                    {
-                        soundId = -1;
-                    }
+                    soundId = -2;
                 }
-                if (soundId == -1)
+                if (soundId == -2)
                 {
                     soundId = API.GetSoundId();
-                    //Utils.ReleaseWriteLine($"Audio with id of {soundId}, hasFinished: {Audio.HasSoundFinished(soundId)}");
-                    if (!Audio.HasSoundFinished(soundId)) return;
-                    //soundId = Audio.PlaySoundFromEntity(_entity, _file);
-                    API.PlaySoundFromEntity(soundId, _file, _entity.Handle, null, false, 0);
-                    //Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, soundId, (InputArgument)_file, (InputArgument)_entity.Handle, (InputArgument)0, (InputArgument)0, (InputArgument)0);
-                    //Utils.ReleaseWriteLine($"Started sound with id of {soundId}");
+                    Utils.ReleaseWriteLine($"_file: {_file}; soundSet: {_soundSet}");
+                    API.PlaySoundFromEntity(soundId, _file, vehicle.Handle, _soundSet, false, 0);
                 }
             }
             else
             {
-                Audio.StopSound(soundId);
-                Audio.ReleaseSound(soundId);
+                if (soundId != -2)
+                {
+                    Audio.StopSound(soundId);
+                    Audio.ReleaseSound(soundId);
+                }
                 if (Audio.HasSoundFinished(soundId)) {
-                    Utils.ReleaseWriteLine($"Stopped and released sound with id of {soundId}");
-                    soundId = -1;
+                    soundId = -2;
                 }
                 else
                 {
-                    Utils.ReleaseWriteLine("Siren still playing?");
-                    var _soundId = soundId;
-                    Task.Delay(100).ContinueWith(p =>
+                    if(soundId != -2)
                     {
-                        Audio.StopSound(_soundId);
-                        Audio.ReleaseSound(_soundId);
-                        if (Audio.HasSoundFinished(_soundId) && soundId == _soundId)
+                        var _soundId = soundId;
+                        BaseScript.Delay(100).ContinueWith(p =>
                         {
-                            Utils.ReleaseWriteLine($"Stopped and released sound with id of {soundId}");
-                            soundId = -1;
-                        }
-                    });
+                            Audio.StopSound(_soundId);
+                            Audio.ReleaseSound(_soundId);
+                            if (Audio.HasSoundFinished(_soundId) && soundId == _soundId)
+                            {
+                                soundId = -2;
+                            }
+                        });
+                    }
                 }
             }
         }
 
         internal void CleanUp()
         {
-#if DEBUG
-            CitizenFX.Core.Debug.WriteLine("Tone deconstructor ran");
-#endif
+            if(soundId == -2)
+            {
+                return;
+            }
             Audio.StopSound(soundId);
             Audio.ReleaseSound(soundId);
+            soundId = -2;
         }
     }
 }

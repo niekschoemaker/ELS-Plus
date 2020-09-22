@@ -1,11 +1,5 @@
 ﻿using CitizenFX.Core;
 using ELS.Light;
-using ELS.NUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Siren
 {
@@ -13,21 +7,23 @@ namespace ELS.Siren
     {
         public void Ticker()
         {
-            
-                Game.DisableControlThisFrame(0, configuration.ElsConfiguration.KBBindings.Sound_Ahorn);
-                AirHornControlsKB();
-                ManualTone1ControlsKB();
-                ManualTone2ControlsKB();
-                ManualTone3ControlsKB();
-                ManualTone4ControlsKB();
-                ManualSoundControlsKB();
-                MainSirenToggleControlsKB();
-                DualSirenControlsKB();
-           
+            _tones.RunTick();
         }
-        public void ExternalTicker()
+
+        public void ControlTicker(Lights lights)
         {
-            PanicAlarmControlsKB();
+            Game.DisableControlThisFrame(0, configuration.ElsConfiguration.KBBindings.Sound_Ahorn);
+            AirHornControlsKB();
+            ManualTone1ControlsKB();
+            ManualTone2ControlsKB();
+            ManualTone3ControlsKB();
+            ManualTone4ControlsKB();
+            ManualSoundControlsKB();
+            if (lights._stage.CurrentStage == 3)
+            {
+                MainSirenToggleControlsKB();
+            }
+            DualSirenControlsKB();
         }
     }
 }

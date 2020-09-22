@@ -1,6 +1,6 @@
-﻿using CitizenFX.Core;
+﻿using ELS.FullSync;
+using Shared;
 using System.Collections.Generic;
-using ELS.FullSync;
 
 namespace ELS.Siren
 {
@@ -11,38 +11,37 @@ namespace ELS.Siren
         internal Tone tone2;
         internal Tone tone3;
         internal Tone tone4;
-        internal Tone panicAlarm;
 
         public Dictionary<string, object> GetData()
         {
             var dic =
                 new Dictionary<string, object>
                 {
-                    {"horn", horn._state.ToString()},
-                    {"tone1", tone1._state.ToString()},
-                    {"tone2", tone2._state.ToString()},
-                    {"tone3", tone3._state.ToString()},
-                    {"tone4", tone4._state.ToString()},
-                    {"panicAlarm",panicAlarm._state.ToString()}
+                    {DataNames.Horn, horn.State},
+                    {DataNames.tone1, tone1.State},
+                    {DataNames.tone2, tone2.State},
+                    {DataNames.tone3, tone3.State},
+                    {DataNames.tone4, tone4.State}
                 };
-#if REMOTETEST
-            CitizenFX.Core.Debug.WriteLine($"tone1: {tone1._state}\n" +
-                $"tone2: {tone2._state}\n" +
-                $"tone3: {tone3._state}\n" +
-                $"tone4: {tone4._state}");
-#endif
 
             return dic;
         }
 
         public void SetData(IDictionary<string, object> data)
         {
-            horn.SetState(bool.Parse(data["horn"].ToString()));
-            tone1.SetState(bool.Parse(data["tone1"].ToString()));
-            tone2.SetState(bool.Parse(data["tone2"].ToString()));
-            tone3.SetState(bool.Parse(data["tone3"].ToString()));
-            tone4.SetState(bool.Parse(data["tone4"].ToString()));
-            panicAlarm.SetState(bool.Parse(data["panicAlarm"].ToString()));
+            horn.SetState((bool)data[DataNames.Horn]);
+            tone1.SetState((bool)data[DataNames.tone1]);
+            tone2.SetState((bool)data[DataNames.tone2]);
+            tone3.SetState((bool)data[DataNames.tone3]);
+            tone4.SetState((bool)data[DataNames.tone4]);
+        }
+
+        public void RunTick()
+        {
+            tone1.RunTick();
+            tone2.RunTick();
+            tone3.RunTick();
+            tone4.RunTick();
         }
     }
 }

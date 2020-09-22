@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CitizenFX.Core;
+﻿using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using ELS.configuration;
-using ELS.NUI;
-using ELS.Light.Patterns;
 using ELS.Light;
+using ELS.NUI;
+using System;
+using System.Collections.Generic;
 
 namespace ELS.Extra
 {
@@ -91,11 +87,11 @@ namespace ELS.Extra
                 {
                     if (Id == 11)
                     {
-                        lights.spotLight.TurnedOn = true;
+                        lights.SpotLight.TurnedOn = true;
                     }
                     else if (Id == 12)
                     {
-                        lights.scene.TurnedOn = true;
+                        lights.Scene.TurnedOn = true;
                     }
                     
                     SetState(true);
@@ -105,11 +101,11 @@ namespace ELS.Extra
                 {
                     if (Id == 11)
                     {
-                        lights.spotLight.TurnedOn = false;
+                        lights.SpotLight.TurnedOn = false;
                     }
                     else if (Id == 12)
                     {
-                        lights.scene.TurnedOn = false;
+                        lights.Scene.TurnedOn = false;
                     }
                     
                     SetState(false);
@@ -141,9 +137,9 @@ namespace ELS.Extra
         {
             if (_Id == 10)
             {
-                return lights._vehicle.Bones[$"extra_ten"].Position;
+                return lights.Vehicle.Bones[$"extra_ten"].Position;
             }
-            return lights._vehicle.Bones[$"extra_{_Id}"].Position;
+            return lights.Vehicle.Bones[$"extra_{_Id}"].Position;
         }
 
         internal int Delay { get; set; }
@@ -154,12 +150,10 @@ namespace ELS.Extra
                 _state = value;
                 if (value)
                 {
-                    API.SetVehicleAutoRepairDisabled(lights._vehicle.Handle, true);
                     SetTrue();
                 }
                 else
                 {
-                    API.SetVehicleAutoRepairDisabled(lights._vehicle.Handle, true);
                     SetFalse();
                 }
             }
@@ -178,9 +172,7 @@ namespace ELS.Extra
             SetInfo();
             PatternType = format;
             TurnedOn = false;
-#if DEBUG
             Utils.DebugWriteLine($"Registered extra_{_Id} successfully");
-#endif
         }
 
         internal void SetState(bool state)
@@ -190,8 +182,8 @@ namespace ELS.Extra
 
         private void SetTrue()
         {
-            API.SetVehicleExtra(lights._vehicle.Handle, _Id, false);
-            if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
+            API.SetVehicleExtra(lights.Vehicle.Handle, _Id, false);
+            if (ELS.ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.Vehicle.NetworkId)
             {
                 ElsUiPanel.SendLightData(true, $"#extra{_Id}", _extraInfo.Color);
             }
@@ -199,8 +191,8 @@ namespace ELS.Extra
 
         private void SetFalse()
         {
-            API.SetVehicleExtra(lights._vehicle.Handle, _Id, true);
-            if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
+            API.SetVehicleExtra(lights.Vehicle.Handle, _Id, true);
+            if (ELS.ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 ElsUiPanel.SendLightData(false, $"#extra{_Id}", _extraInfo.Color);
             }
@@ -217,31 +209,15 @@ namespace ELS.Extra
                 allowflash = 1;
                 if (IsPatternRunning)
                 {
-                    if (!IsPatternRunning)
-                    {
-                        CleanUp();
-                        return;
-                    }
                     if (count <= Pattern.Length - 1)
                     {
                         if (Pattern.ToCharArray()[count].Equals('0'))
                         {
                             SetState(false);
-                            if (!IsPatternRunning)
-                            {
-                                CleanUp();
-                                return;
-                            }
                         }
                         else
                         {
                             SetState(true);
-                            if (!IsPatternRunning)
-                            {
-                                CleanUp();
-                                return;
-                            }
-
                         }
                         count++;
                     }                    
@@ -249,23 +225,19 @@ namespace ELS.Extra
                     {
                         count = 0;
                     }
-                    if (!IsPatternRunning)
-                    {
-                        CleanUp();
-                        return;
-                    }
+                }
+                else
+                {
+                    CleanUp();
+                    return;
                 }
                 flashrate = Game.GameTime;
-
             }
             
 
             if (IsPatternRunning)
             {
-                if (Pattern[count].Equals('0'))
-                {
-                }
-                else
+                if (!Pattern[count].Equals('0'))
                 {
                     if (_extraInfo.AllowEnvLight)
                     {
@@ -285,14 +257,14 @@ namespace ELS.Extra
             {
                 return;
             }
-            if (lights._vehicle == null)
+            if (lights.Vehicle == null)
             {
 #if DEBUG
                 Utils.DebugWriteLine("Vehicle is null!!!");
 #endif
                 return;
             }
-            var off = lights._vehicle.GetPositionOffset(GetBone());
+            var off = lights.Vehicle.GetPositionOffset(GetBone());
             if (off == null)
             {
 #if DEBUG
@@ -300,8 +272,8 @@ namespace ELS.Extra
 #endif
                 return;
             }
-            var extraoffset = lights._vehicle.GetOffsetPosition(off + new Vector3(_extraInfo.OffsetX, _extraInfo.OffsetY, _extraInfo.OffsetZ));
-            API.DrawLightWithRangeAndShadow(extraoffset.X, extraoffset.Y, extraoffset.Z, Color['r'], Color['g'], Color['b'], Global.EnvLightRng, Global.EnvLightInt, 0.01f);
+            var extraoffset = lights.Vehicle.GetOffsetPosition(off + new Vector3(_extraInfo.OffsetX, _extraInfo.OffsetY, _extraInfo.OffsetZ));
+            API.DrawLightWithRange(extraoffset.X, extraoffset.Y, extraoffset.Z, Color['r'], Color['g'], Color['b'], Global.EnvLightRng, Global.EnvLightInt);
         }
 
         internal Dictionary<char, int> Color;
@@ -356,7 +328,7 @@ namespace ELS.Extra
                     LightType = LightType.SCL;
                     Pattern = "";
                     IsPatternRunning = false;
-                    lights.spotLight = new SpotLight(lights);
+                    lights.SpotLight = new SpotLight(lights);
 
 #if DEBUG
                     Utils.DebugWriteLine("Takedown lights setup");
@@ -368,7 +340,7 @@ namespace ELS.Extra
                     Delay = Global.PrimDelay;
                     Pattern = "";
                     IsPatternRunning = false;
-                    lights.scene = new Scene(lights);
+                    lights.Scene = new Scene(lights);
 
 #if DEBUG
                     Utils.DebugWriteLine("Scene lights setup");
@@ -413,6 +385,15 @@ namespace ELS.Extra
 
         internal void CleanUp()
         {
+            if (!Vehicle.Exists(lights.Vehicle) && lights.ElsVehicle.TryGetVehicle(out var vehicle))
+            {
+                lights.Vehicle = vehicle;
+            }
+
+            if (lights.Vehicle == null)
+            {
+                return;
+            }
             SetState(false);
         }
     }

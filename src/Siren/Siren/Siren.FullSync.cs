@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using CitizenFX.Core;
-using ELS.FullSync;
+﻿using ELS.FullSync;
+using Shared;
+using System.Collections.Generic;
 
 namespace ELS.Siren
 {
@@ -8,16 +8,16 @@ namespace ELS.Siren
     {
         public void SetData(IDictionary<string, object> data)
         {
-            if (data.ContainsKey("_mainSiren"))
+            if (data.TryGetValue(DataNames._mainSiren, out var mainSiren))
             {
-                _mainSiren.SetData((IDictionary<string, object>)data["_mainSiren"]);
+                _mainSiren.SetData((IDictionary<string, object>)mainSiren);
             }
-            if (data.ContainsKey("_tones")) {
-                _tones.SetData((IDictionary<string,object>)data["_tones"]);
+            if (data.TryGetValue(DataNames._tones, out var tones)) {
+                _tones.SetData((IDictionary<string,object>)tones);
             }
-            if(data.TryGetValue("dual_siren", out object res))
+            if(data.TryGetValue(DataNames.dual_siren, out var dualSiren))
             {
-                dual_siren = (bool)res;
+                dual_siren = (bool)dualSiren;
             }
         }
 
@@ -25,9 +25,9 @@ namespace ELS.Siren
         {
             var dic = new Dictionary<string, object>
             {
-                {"_mainSiren",_mainSiren.GetData() },
-                { "_tones",_tones.GetData()},
-                {"dual_siren",dual_siren }
+                { DataNames._mainSiren, _mainSiren.GetData() },
+                { DataNames._tones, _tones.GetData() },
+                { DataNames.dual_siren, dual_siren }
             };
             return dic;
         }

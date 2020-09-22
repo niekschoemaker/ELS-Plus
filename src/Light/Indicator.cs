@@ -1,13 +1,8 @@
 ﻿using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using ELS.configuration;
-using ELS.FullSync;
 using ELS.NUI;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Light
 {
@@ -19,7 +14,7 @@ namespace ELS.Light
         Hazard
     }
 
-    internal class Indicator
+    internal class Indicator : BaseScript
     {
 
         public static IndicatorState CurrentIndicatorState(Vehicle veh) {
@@ -28,15 +23,15 @@ namespace ELS.Light
 
         public static Dictionary<string, IndicatorState> IndStateLib = new Dictionary<string, IndicatorState>()
         {
-            {"Off",IndicatorState.Off },
-            {"Left", IndicatorState.Left },
+            { "Off", IndicatorState.Off },
+            { "Left", IndicatorState.Left },
             { "Right", IndicatorState.Right },
             { "Hazard", IndicatorState.Hazard }
         };
 
         public static int IndicatorDelay { get; set; }
 
-        public static bool ActivateIndicatorTimer { get; set; }
+        public static bool IsHazardLightActive { get; set; }
 
         public static void ToggleInicatorState(Vehicle veh, IndicatorState state)
         {
@@ -61,95 +56,111 @@ namespace ELS.Light
             }
         }
 
-        internal static void RunAsync(Vehicle veh)
+        public static void ToggleRightBlinker()
         {
-            //Game.DisableControlThisFrame(0, ElsConfiguration.KeyBindings.ToggleLIND);
-            //Game.DisableControlThisFrame(0, ElsConfiguration.KeyBindings.ToggleRIND);
-            //Game.DisableControlThisFrame(0, ElsConfiguration.KeyBindings.ToggleHAZ);
-
-            if (Game.IsControlEnabled(0, ElsConfiguration.KBBindings.ToggleLIND) && Game.IsControlJustPressed(0, ElsConfiguration.KBBindings.ToggleLIND) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
+            var veh = ELS.CurrentVehicle;
+            if (CurrentIndicatorState(veh) == IndicatorState.Right)
             {
-                if (CurrentIndicatorState(veh) == IndicatorState.Left)
-                {
-#if DEBUG
-                    Utils.DebugWriteLine("Toggle Off");
-#endif
-                    ToggleInicatorState(veh, IndicatorState.Off);
-                    ActivateIndicatorTimer = false;
-                    if (Global.BtnClicksIndicators)
-                    {
-                        ElsUiPanel.PlayUiSound("indoff");
-                    }
-                    RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
-                    return;
-                }
-#if DEBUG
-                Utils.DebugWriteLine("Toggle Left");
-#endif
-                ToggleInicatorState(veh, IndicatorState.Left);
+                ToggleInicatorState(veh, IndicatorState.Off);
                 if (Global.BtnClicksIndicators)
                 {
-                    ElsUiPanel.PlayUiSound("indon");
+                    ElsUiPanel.PlayUiSound("indoff");
                 }
-                ActivateIndicatorTimer = true;
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true);
+                return;
             }
-            else if (Game.IsControlJustPressed(0, ElsConfiguration.KBBindings.ToggleRIND) && Game.IsControlEnabled(0, ElsConfiguration.KBBindings.ToggleRIND) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
+            ToggleInicatorState(veh, IndicatorState.Right);
+            if (Global.BtnClicksIndicators)
             {
-                if (CurrentIndicatorState(veh) == IndicatorState.Right)
-                {
-#if DEBUG
-                    Utils.DebugWriteLine("Toggle Off");
-#endif
-                    ToggleInicatorState(veh, IndicatorState.Off);
-                    ActivateIndicatorTimer = false;
-                    if (Global.BtnClicksIndicators)
-                    {
-                        ElsUiPanel.PlayUiSound("indoff");
-                    }
-                    RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
-                    return;
-                }
-#if DEBUG
-                Utils.DebugWriteLine("Toggle Right");
-#endif
-                ToggleInicatorState(veh, IndicatorState.Right);
-                ActivateIndicatorTimer = true;
+                ElsUiPanel.PlayUiSound("indon");
+            }
+            RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true);
+        }
+
+        [Command("togglerightblinker")]
+        public static void ToggleRightBlinkerCommand()
+        {
+            if (ELS.CurrentVehicle != null && Vehicle.Exists(ELS.CurrentVehicle) && Game.IsControlEnabled(0, ElsConfiguration.KBBindings.ToggleRIND))
+            {
+                ToggleRightBlinker();
+            }
+        }
+
+        public static void ToggleLeftBlinker()
+        {
+            var veh = ELS.CurrentVehicle;
+            if (CurrentIndicatorState(veh) == IndicatorState.Left)
+            {
+                ToggleInicatorState(veh, IndicatorState.Off);
                 if (Global.BtnClicksIndicators)
                 {
-                    ElsUiPanel.PlayUiSound("indon");
+                    ElsUiPanel.PlayUiSound("indoff");
                 }
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true);
+                return;
             }
-            else if (Game.IsControlJustPressed(0, ElsConfiguration.KBBindings.ToggleHAZ) && Game.IsControlEnabled(0, ElsConfiguration.KBBindings.ToggleHAZ) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
+
+            ToggleInicatorState(veh, IndicatorState.Left);
+            if (Global.BtnClicksIndicators)
             {
-                if (CurrentIndicatorState(veh) == IndicatorState.Hazard)
-                {
-#if DEBUG
-                    Utils.DebugWriteLine("Toggle Off");
-#endif
-                    ToggleInicatorState(veh, IndicatorState.Off);
-                    ActivateIndicatorTimer = false;
-                    if (Global.BtnClicksIndicators)
-                    {
-                        ElsUiPanel.PlayUiSound("indoff");
-                    }
-                    RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
-                    return;
-                }
-#if DEBUG
-                Utils.DebugWriteLine("Toggle Hazard");
-#endif
-                ToggleInicatorState(veh, IndicatorState.Hazard);
-                ActivateIndicatorTimer = true;
+                ElsUiPanel.PlayUiSound("indon");
+            }
+            RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true);
+        }
+
+        [Command("toggleleftblinker")]
+        public static void ToggleLeftBlinkerCommand()
+        {
+            if (ELS.CurrentVehicle != null && Vehicle.Exists(ELS.CurrentVehicle) && Game.IsControlEnabled(0, ElsConfiguration.KBBindings.ToggleLIND))
+            {
+                ToggleLeftBlinker();
+            }
+        }
+
+        public static void SetHazards(bool turnOn)
+        {
+            var veh = ELS.CurrentVehicle;
+            if (!turnOn)
+            {
+                ToggleInicatorState(veh, IndicatorState.Off);
+                IsHazardLightActive = false;
                 if (Global.BtnClicksIndicators)
                 {
-                    ElsUiPanel.PlayUiSound("indon");
+                    ElsUiPanel.PlayUiSound("indoff");
                 }
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true);
+                return;
             }
 
+            ToggleInicatorState(veh, IndicatorState.Hazard);
+            IsHazardLightActive = true;
+            if (Global.BtnClicksIndicators)
+            {
+                ElsUiPanel.PlayUiSound("indon");
+            }
+            RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleInd, veh, true);
+        }
 
+        public static void ToggleHazards()
+        {
+            var veh = ELS.CurrentVehicle;
+            if (CurrentIndicatorState(veh) == IndicatorState.Hazard)
+            {
+                SetHazards(false);
+            }
+            else
+            {
+                SetHazards(true);
+            }
+        }
+
+        [Command("togglehazard")]
+        public static void ToggleHazardsCommand()
+        {
+            if (ELS.CurrentVehicle != null && Vehicle.Exists(ELS.CurrentVehicle) && !Game.IsPaused && Game.IsControlEnabled(0, ElsConfiguration.KBBindings.ToggleHAZ))
+            {
+                ToggleHazards();
+            }
         }
     }
 }

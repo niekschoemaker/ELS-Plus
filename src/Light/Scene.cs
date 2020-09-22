@@ -1,17 +1,15 @@
 ﻿using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using ELS.configuration;
+using Shared;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Light
 {
     internal class Scene
     {
-        ILight iLight;
+        readonly ILight iLight;
         private Vector3 ldirVector;
         private Vector3 rdirVector;
         private bool _on;
@@ -23,9 +21,9 @@ namespace ELS.Light
             {
 
                 _on = value;
-                if (!iLight._vcfroot.MISC.SceneLights.IlluminateSidesOnly)
+                if (!iLight.Vcfroot.MISC.SceneLights.IlluminateSidesOnly)
                 {
-                    iLight.spotLight.TurnedOn = TurnedOn;
+                    iLight.SpotLight.TurnedOn = TurnedOn;
                 }
             }
         }
@@ -41,14 +39,14 @@ namespace ELS.Light
             Dictionary<string, object> dic = new Dictionary<string, object>();
 
 
-            dic.Add("TurnedOn", TurnedOn);
+            dic.Add(DataNames.TurnedOn, TurnedOn);
             return dic;
         }
 
         public void SetData(IDictionary<string, object> data)
         {
 
-            TurnedOn = bool.Parse(data["TurnedOn"].ToString());
+            TurnedOn = (bool)data[DataNames.TurnedOn];
 #if DEBUG
             Utils.DebugWriteLine($"Got scene data for {iLight._vehicle.GetNetworkId()}");
 #endif
@@ -56,11 +54,11 @@ namespace ELS.Light
 
         public void RunTick()
         {
-            var loff = iLight._vehicle.GetPositionOffset(iLight._vehicle.Bones[$"window_lf"].Position);
-            var lspotoffset = iLight._vehicle.GetOffsetPosition(loff + new Vector3(-0.5f, -0.5f, 0.5f));
+            var loff = iLight.Vehicle.GetPositionOffset(iLight.Vehicle.Bones[$"window_lf"].Position);
+            var lspotoffset = iLight.Vehicle.GetOffsetPosition(loff + new Vector3(-0.5f, -0.5f, 0.5f));
 
-            float lhx = (float)((double)lspotoffset.X + 5 * Math.Cos(((double)-180 + iLight._vehicle.Rotation.Z) * Math.PI / 180.0));
-            float lhy = (float)((double)lspotoffset.Y + 5 * Math.Sin(((double)-180 + iLight._vehicle.Rotation.Z) * Math.PI / 180.0));
+            float lhx = (float)((double)lspotoffset.X + 5 * Math.Cos(((double)-180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
+            float lhy = (float)((double)lspotoffset.Y + 5 * Math.Sin(((double)-180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
             float lvz = (float)((double)lspotoffset.Z + 5 * Math.Sin((double)-180 * Math.PI / 180.0));
 
             Vector3 ldestinationCoords = (new Vector3(lhx, lhy, lvz));
@@ -68,11 +66,11 @@ namespace ELS.Light
             ldirVector = ldestinationCoords - lspotoffset;
             ldirVector.Normalize();
 
-            var roff = iLight._vehicle.GetPositionOffset(iLight._vehicle.Bones[$"window_rf"].Position);
-            var rspotoffset = iLight._vehicle.GetOffsetPosition(roff + new Vector3(0.5f, -0.5f, 0.5f));
+            var roff = iLight.Vehicle.GetPositionOffset(iLight.Vehicle.Bones[$"window_rf"].Position);
+            var rspotoffset = iLight.Vehicle.GetOffsetPosition(roff + new Vector3(0.5f, -0.5f, 0.5f));
 
-            float rhx = (float)((double)rspotoffset.X + 5 * - Math.Cos(((double)180 + iLight._vehicle.Rotation.Z) * Math.PI / 180.0));
-            float rhy = (float)((double)rspotoffset.Y + 5 * - Math.Sin(((double)180 + iLight._vehicle.Rotation.Z) * Math.PI / 180.0));
+            float rhx = (float)((double)rspotoffset.X + 5 * - Math.Cos(((double)180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
+            float rhy = (float)((double)rspotoffset.Y + 5 * - Math.Sin(((double)180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
             float rvz = (float)((double)rspotoffset.Z + 5 * - Math.Sin((double)180 * Math.PI / 180.0));
 
             Vector3 rdestinationCoords = (new Vector3(rhx, rhy, rvz));

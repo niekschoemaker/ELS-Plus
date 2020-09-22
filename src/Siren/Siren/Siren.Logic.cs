@@ -1,10 +1,7 @@
 using CitizenFX.Core;
-using CitizenFX.Core.UI;
 using ELS.configuration;
-using Control = CitizenFX.Core.Control;
-using ELS.Light;
 using ELS.NUI;
-using ELS.TrafficControl;
+using Control = CitizenFX.Core.Control;
 
 namespace ELS.Siren
 {
@@ -20,7 +17,6 @@ namespace ELS.Siren
             }
             if (pressed)
             {
-                //Vehicles.MoveTraffic();
                 patts[0] = _patternController.CurrentPrmPattern;
                 patts[1] = _patternController.CurrentSecPattern;
                 patts[2] = _patternController.CurrentWrnPattern;
@@ -52,7 +48,7 @@ namespace ELS.Siren
                 }
                 _tones.horn.SetState(true);
             }
-            if (!pressed)
+            else
             {
                 if (_vcf.PRML.ForcedPatterns.MainHorn.Enabled)
                 {
@@ -86,9 +82,9 @@ namespace ELS.Siren
             {
                 if (_mainSiren._enable) //Is the MainSiren Active
                 {
-                    if (_mainSiren.currentTone != _tones.tone1)
+                    if (_mainSiren.currentTone != 0)
                     {
-                        _mainSiren.setMainTone(_tones.tone1);
+                        _mainSiren.setMainTone(0);
                         if (_vcf.PRML.ForcedPatterns.SrnTone1.Enabled)
                         {
                             _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone1.IntPattern;
@@ -112,7 +108,7 @@ namespace ELS.Siren
                         _tones.tone2.SetState(true);
                         _tones.tone3.SetState(false);
                     }
-                    ElsUiPanel.SetUiDesc(_mainSiren.currentTone.Type, "SRN");
+                    ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
                     ElsUiPanel.ToggleUiBtnState(_mainSiren._enable, "SRN");
                     if (Global.BtnClicksBtwnSrnTones)
                     {
@@ -131,9 +127,9 @@ namespace ELS.Siren
 
                 if (_mainSiren._enable)
                 {
-                    if (_mainSiren.currentTone != _tones.tone2)
+                    if (_mainSiren.currentTone != 1)
                     {
-                        _mainSiren.setMainTone(_tones.tone2);
+                        _mainSiren.setMainTone(1);
                         if (_vcf.PRML.ForcedPatterns.SrnTone2.Enabled)
                         {
                             _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone2.IntPattern;
@@ -159,7 +155,7 @@ namespace ELS.Siren
                     _tones.tone2.SetState(false);
                     _tones.tone3.SetState(true);
                 }
-                ElsUiPanel.SetUiDesc(_mainSiren.currentTone.Type, "SRN");
+                ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
                 ElsUiPanel.ToggleUiBtnState(_mainSiren._enable, "SRN");
                 if (Global.BtnClicksBtwnSrnTones)
                 {
@@ -174,9 +170,9 @@ namespace ELS.Siren
             {
                 if (_mainSiren._enable)
                 {
-                    if (_mainSiren.currentTone != _tones.tone3)
+                    if (_mainSiren.currentTone != 2)
                     {
-                        _mainSiren.setMainTone(_tones.tone3);
+                        _mainSiren.setMainTone(2);
                         if (_vcf.PRML.ForcedPatterns.SrnTone3.Enabled)
                         {
                             _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone3.IntPattern;
@@ -201,7 +197,7 @@ namespace ELS.Siren
                     _tones.tone2.SetState(false);
                     _tones.tone4.SetState(true);
                 }
-                ElsUiPanel.SetUiDesc(_mainSiren.currentTone.Type, "SRN");
+                ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
                 ElsUiPanel.ToggleUiBtnState(_mainSiren._enable, "SRN");
                 if (Global.BtnClicksBtwnSrnTones)
                 {
@@ -220,9 +216,9 @@ namespace ELS.Siren
             {
                 if (_mainSiren._enable)
                 {
-                    if (_mainSiren.currentTone != _tones.tone4)
+                    if (_mainSiren.currentTone != 3)
                     {
-                        _mainSiren.setMainTone(_tones.tone4);
+                        _mainSiren.setMainTone(3);
                         if (_vcf.PRML.ForcedPatterns.SrnTone4.Enabled)
                         {
                             _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone4.IntPattern;
@@ -248,7 +244,7 @@ namespace ELS.Siren
                     _tones.tone2.SetState(false);
                     _tones.tone3.SetState(false);
                 }
-                ElsUiPanel.SetUiDesc(_mainSiren.currentTone.Type, "SRN");
+                ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
                 ElsUiPanel.ToggleUiBtnState(_mainSiren._enable, "SRN");
                 if (Global.BtnClicksBtwnSrnTones)
                 {
@@ -267,7 +263,7 @@ namespace ELS.Siren
                 {
                     dual_siren = _mainSiren._enable;
                 }
-                ElsUiPanel.SetUiDesc(_mainSiren.currentTone.Type, "SRN");
+                ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
                 ElsUiPanel.PlayUiSound("sirenclickoff");
             }
             
@@ -279,7 +275,7 @@ namespace ELS.Siren
             if (pressed)
             {
                 if (!_mainSiren._enable || (!_mainSiren._enable && _vcf.SOUNDS.MainHorn.InterruptsSiren &&
-                                           _tones.horn._state))
+                                           _tones.horn.State))
                 {
                     _tones.tone1.SetState(true);
                 }
@@ -296,7 +292,7 @@ namespace ELS.Siren
             else
             {
                 if (!_mainSiren._enable || (!_mainSiren._enable && _vcf.SOUNDS.MainHorn.InterruptsSiren &&
-                                           _tones.horn._state))
+                                           _tones.horn.State))
                 {
                     _tones.tone1.SetState(false);
                 }
@@ -314,7 +310,7 @@ namespace ELS.Siren
             if (toggle)
             {
                 dual_siren = !dual_siren;
-                switch(_mainSiren.currentTone.Type)
+                switch(_mainSiren.MainTones[_mainSiren.currentTone].Type)
                 {
                     case "WL":
                         _tones.tone2.SetState(dual_siren);
@@ -329,24 +325,9 @@ namespace ELS.Siren
                         _tones.tone1.SetState(dual_siren);
                         break;
                 }
-#if DEBUG
-                Utils.DebugWriteLine($"Dual Siren {dual_siren}");
-#endif
             }
             ElsUiPanel.ToggleUiBtnState(dual_siren, "DUAL");
             ElsUiPanel.PlayUiSound("sirenclickoff");
-        }
-
-        void PanicAlarmLogic(bool toggle,bool disableControls = false)
-        {
-            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnPnic);
-            //CitizenFX.Core.UI.Screen.ShowNotification($"{toggle}");
-            this._tones.panicAlarm.SetState(toggle);
-            if (toggle)
-            {
-
-                //Screen.ShowNotification($"{toggle}");
-            }
         }
     }
 }

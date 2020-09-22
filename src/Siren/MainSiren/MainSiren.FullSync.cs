@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using CitizenFX.Core;
-using ELS.FullSync;
+﻿using Shared;
+using System.Collections.Generic;
 
 namespace ELS.Siren
 {
@@ -13,17 +12,17 @@ namespace ELS.Siren
             public Dictionary<string, object> GetData()
             {
                 Dictionary<string, object> dic = new Dictionary<string, object>();
-                dic.Add("interupted", this.interupted.ToString());
-                dic.Add("currentTone", this.MainTones.IndexOf(currentTone).ToString());
-                dic.Add("state", this._enable.ToString());
+                dic.Add(DataNames.Interrupted, interupted);
+                dic.Add(DataNames.CurrentTone, currentTone.ToString());
+                dic.Add(DataNames._enable, _enable);
                 return dic;
             }
 
             public void SetData(IDictionary<string, object> data)
             {
-                currentTone = MainTones[int.Parse(data["currentTone"].ToString())];
-                interupted = bool.Parse(data["interupted"].ToString());
-                _enable = (bool.Parse(data["state"].ToString()));
+                currentTone = int.Parse(data[DataNames.CurrentTone].ToString());
+                interupted = (bool)data[DataNames.Interrupted];
+                _enable = (bool)data[DataNames._enable];
             }
         }
     }

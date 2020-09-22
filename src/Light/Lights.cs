@@ -18,6 +18,7 @@
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using ELS.configuration;
+using ELS.Manager;
 using ELS.NUI;
 using System;
 using System.Collections.Generic;
@@ -33,52 +34,82 @@ namespace ELS.Light
     }
     internal struct Extras
     {
-        public Dictionary<int, Extra.Extra> PRML;
-        internal Dictionary<int, Extra.Extra> WRNL;
-        internal Dictionary<int, Extra.Extra> SECL;
-        internal Extra.Extra SBRN;
-        internal Extra.Extra SCL;
-        internal Extra.Extra TDL;
-        internal Board.ArrowBoard BRD;
-        internal Gadgets.Ladder LDR;
+        public Dictionary<int, Extra.Extra> PrimaryLights;
+        internal Dictionary<int, Extra.Extra> WarningLights;
+        internal Dictionary<int, Extra.Extra> SecondaryLights;
+        internal Extra.Extra SteadyBurn;
+        internal Extra.Extra SceneLights;
+        internal Extra.Extra TakedownLights;
+        internal Board.ArrowBoard Board;
+        internal Gadgets.Ladder Ladder;
     }
 
     partial class Lights : IManagerEntry, ILight
     {
         private Extras _extras = new Extras
         {
-            PRML = new Dictionary<int, Extra.Extra>(),
-            WRNL = new Dictionary<int, Extra.Extra>(),
-            SECL = new Dictionary<int, Extra.Extra>(),
+            PrimaryLights = new Dictionary<int, Extra.Extra>(),
+            WarningLights = new Dictionary<int, Extra.Extra>(),
+            SecondaryLights = new Dictionary<int, Extra.Extra>(),
         };
 
-        public Vcfroot _vcfroot { get; set; }
-        public Vehicle _vehicle { get; set; }
+        public Vcfroot Vcfroot { get; set; }
+        public Vehicle Vehicle { get; set; }
+        public ELSVehicle ElsVehicle { get; set; }
         internal Stage _stage;
-        public Scene scene { get; set; }
-        public SpotLight spotLight { get; set; }
+        public Scene Scene { get; set; }
+        public SpotLight SpotLight { get; set; }
+        private bool _isInitialized = false;
        
 
-        internal Lights(Vehicle vehicle, Vcfroot vcfroot, [Optional]IDictionary<string, object> data)
+        internal Lights(ELSVehicle vehicle, Vcfroot vcfroot, [Optional]IDictionary<string, object> data)
         {
-            _vcfroot = vcfroot;
-            _vehicle = vehicle;
-            AddAllValidLightExtras();
+            Vcfroot = vcfroot;
+            ElsVehicle = vehicle;
+            Vehicle = vehicle.GetVehicle;
             LightStagesSetup();
-            SetupPatternsPrm();
-            SetupSecPatterns();
-            SetupWrnPatterns();
+            if (Vehicle.Exists(Vehicle))
+            {
+                Init();
+            }
         }
 
         private void LightStagesSetup()
         {
-            _stage = new Stage(_vcfroot.PRML, _vcfroot.SECL, _vcfroot.WRNL, _vehicle.GetNetworkId(), _vcfroot.INTERFACE.LstgActivationType);
+            if (Vcfroot == null)
+            {
+                if (Utils.IsDeveloper)
+                {
+                    Utils.DebugWriteLine($"_vcfroot: {Vcfroot == null} networkId: {ElsVehicle?.NetworkId}; INTERFACE: {Vcfroot?.INTERFACE?.LstgActivationType == null}");
+                }
+                return;
+            }
+            _stage = new Stage(Vcfroot.PRML, Vcfroot.SECL, Vcfroot.WRNL, ElsVehicle.NetworkId, Vcfroot.INTERFACE?.LstgActivationType);
+        }
+
+        private void Init()
+        {
+            Vehicle = ElsVehicle.GetVehicle;
+            if (!Vehicle.Exists(Vehicle))
+            {
+                Vehicle = null;
+                return;
+            }
+            if (_isInitialized)
+            {
+                return;
+            }
+            AddAllValidLightExtras();
+            SetupPatternsPrm();
+            SetupSecPatterns();
+            SetupWrnPatterns();
+            _isInitialized = true;
         }
 
         internal void SyncUi()
         {
             ElsUiPanel.ToggleStages(_stage.CurrentStage);
-            if (_vcfroot.INTERFACE.LstgActivationType.ToLower().Equals("euro"))
+            if (Vcfroot.INTERFACE.LstgActivationType.ToLower().Equals("euro"))
             {
                 ElsUiPanel.SetEuro(true);
             }
@@ -93,18 +124,31 @@ namespace ELS.Light
             ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
             ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
             ElsUiPanel.ToggleUiBtnState(crsLights, "CRS");
-            if (scene != null)
+            if (Scene != null)
             {
-                ElsUiPanel.ToggleUiBtnState(scene.TurnedOn, "SCL");
+                ElsUiPanel.ToggleUiBtnState(Scene.TurnedOn, "SCL");
             }
-            if (spotLight != null)
+            if (SpotLight != null)
             {
-                ElsUiPanel.ToggleUiBtnState(spotLight.TurnedOn, "TDL");
+                ElsUiPanel.ToggleUiBtnState(SpotLight.TurnedOn, "TDL");
             }
         }
 
         internal void SetGTASirens(bool state) {
-            _vehicle.IsSirenActive = state;
+            ElsVehicle.IsSirenActive = state;
+            var distance = Game.Player.Character.Position.DistanceToSquared(Vehicle.Position);
+            if (distance < (ELSVehicle.deactivateDistance * ELSVehicle.deactivateDistance) || state == false)
+            {
+#if SIREN
+                _vehicle.IsSirenActive = state;
+#endif
+            }
+            else
+            {
+#if SIREN
+                _vehicle.IsSirenActive = false;
+#endif
+            }
         }
 
         private void AddAllValidLightExtras()
@@ -115,171 +159,185 @@ namespace ELS.Light
                 {
                     case 1:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 1) && _vcfroot.EOVERRIDE.Extra01.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 1) && Vcfroot.EOVERRIDE.Extra01.IsElsControlled)
                             {
-                                this._extras.PRML.Add(1, new Extra.Extra(this, 1, _vcfroot.EOVERRIDE.Extra01, _vcfroot.PRML.LightingFormat));
+                                this._extras.PrimaryLights.Add(1, new Extra.Extra(this, 1, Vcfroot.EOVERRIDE.Extra01, Vcfroot.PRML.LightingFormat));
                             }
                         }
                         break;
                     case 2:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 2) && _vcfroot.EOVERRIDE.Extra02.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 2) && Vcfroot.EOVERRIDE.Extra02.IsElsControlled)
                             {
-                                this._extras.PRML.Add(2, new Extra.Extra(this, 2, _vcfroot.EOVERRIDE.Extra02, _vcfroot.PRML.LightingFormat));
+                                this._extras.PrimaryLights.Add(2, new Extra.Extra(this, 2, Vcfroot.EOVERRIDE.Extra02, Vcfroot.PRML.LightingFormat));
                             }
                         }
                         break;
                     case 3:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 3) && _vcfroot.EOVERRIDE.Extra03.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 3) && Vcfroot.EOVERRIDE.Extra03.IsElsControlled)
                             {
-                                this._extras.PRML.Add(3, new Extra.Extra(this, 3, _vcfroot.EOVERRIDE.Extra03, _vcfroot.PRML.LightingFormat));
+                                this._extras.PrimaryLights.Add(3, new Extra.Extra(this, 3, Vcfroot.EOVERRIDE.Extra03, Vcfroot.PRML.LightingFormat));
                             }
                         }
                         break;
                     case 4:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 4) && _vcfroot.EOVERRIDE.Extra04.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 4) && Vcfroot.EOVERRIDE.Extra04.IsElsControlled)
                             {
-                                this._extras.PRML.Add(4, new Extra.Extra(this, 4, _vcfroot.EOVERRIDE.Extra04, _vcfroot.PRML.LightingFormat));
+                                this._extras.PrimaryLights.Add(4, new Extra.Extra(this, 4, Vcfroot.EOVERRIDE.Extra04, Vcfroot.PRML.LightingFormat));
                             }
                         }
                         break;
                     case 5:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 5) && _vcfroot.EOVERRIDE.Extra05.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 5) && Vcfroot.EOVERRIDE.Extra05.IsElsControlled)
                             {
-                                this._extras.WRNL.Add(5, new Extra.Extra(this, 5, _vcfroot.EOVERRIDE.Extra05, _vcfroot.WRNL.LightingFormat));
+                                this._extras.WarningLights.Add(5, new Extra.Extra(this, 5, Vcfroot.EOVERRIDE.Extra05, Vcfroot.WRNL.LightingFormat));
                             }
                         }
                         break;
                     case 6:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 6) && _vcfroot.EOVERRIDE.Extra06.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 6) && Vcfroot.EOVERRIDE.Extra06.IsElsControlled)
                             {
-                                this._extras.WRNL.Add(6, new Extra.Extra(this, 6, _vcfroot.EOVERRIDE.Extra06, _vcfroot.WRNL.LightingFormat));
+                                this._extras.WarningLights.Add(6, new Extra.Extra(this, 6, Vcfroot.EOVERRIDE.Extra06, Vcfroot.WRNL.LightingFormat));
                             }
                         }
                         break;
                     case 7:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 7) && _vcfroot.EOVERRIDE.Extra07.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 7) && Vcfroot.EOVERRIDE.Extra07.IsElsControlled)
                             {
-                                this._extras.SECL.Add(7, new Extra.Extra(this, 7, _vcfroot.EOVERRIDE.Extra07, _vcfroot.SECL.LightingFormat));
+                                this._extras.SecondaryLights.Add(7, new Extra.Extra(this, 7, Vcfroot.EOVERRIDE.Extra07, Vcfroot.SECL.LightingFormat));
                             }
                         }
                         break;
                     case 8:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 8) && _vcfroot.EOVERRIDE.Extra08.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 8) && Vcfroot.EOVERRIDE.Extra08.IsElsControlled)
                             {
-                                this._extras.SECL.Add(8, new Extra.Extra(this, 8, _vcfroot.EOVERRIDE.Extra08, _vcfroot.SECL.LightingFormat));
+                                this._extras.SecondaryLights.Add(8, new Extra.Extra(this, 8, Vcfroot.EOVERRIDE.Extra08, Vcfroot.SECL.LightingFormat));
                             }
                         }
                         break;
                     case 9:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 9) && _vcfroot.EOVERRIDE.Extra09.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 9) && Vcfroot.EOVERRIDE.Extra09.IsElsControlled)
                             {
-                                this._extras.SECL.Add(9, new Extra.Extra(this, 9, _vcfroot.EOVERRIDE.Extra09, _vcfroot.SECL.LightingFormat));
+                                this._extras.SecondaryLights.Add(9, new Extra.Extra(this, 9, Vcfroot.EOVERRIDE.Extra09, Vcfroot.SECL.LightingFormat));
                             }
                         }
                         break;
                     case 10:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 10) && _vcfroot.EOVERRIDE.Extra10.IsElsControlled)
+                            if (API.DoesExtraExist(Vehicle.Handle, 10) && Vcfroot.EOVERRIDE.Extra10.IsElsControlled)
                             {
-                                this._extras.SBRN = new Extra.Extra(this, 10, _vcfroot.EOVERRIDE.Extra10);
+                                this._extras.SteadyBurn = new Extra.Extra(this, 10, Vcfroot.EOVERRIDE.Extra10);
                             }
                         }
                         break;
                     case 11:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 11) && _vcfroot.EOVERRIDE.Extra11.IsElsControlled && _vcfroot.MISC.Takedowns.AllowUse)
+                            if (API.DoesExtraExist(Vehicle.Handle, 11) && Vcfroot.EOVERRIDE.Extra11.IsElsControlled && Vcfroot.MISC.Takedowns.AllowUse)
                             {
-                                this._extras.TDL = new Extra.Extra(this, 11, _vcfroot.EOVERRIDE.Extra11);
+                                this._extras.TakedownLights = new Extra.Extra(this, 11, Vcfroot.EOVERRIDE.Extra11);
                             }
-                            else if (_vcfroot.MISC.Takedowns.AllowUse)
+                            else if (Vcfroot.MISC.Takedowns.AllowUse)
                             {
-                                spotLight = new SpotLight(this);
+                                SpotLight = new SpotLight(this);
                             }
                         }
                         break;
                     case 12:
                         {
-                            if (API.DoesExtraExist(_vehicle.Handle, 12) && _vcfroot.EOVERRIDE.Extra12.IsElsControlled && _vcfroot.MISC.SceneLights.AllowUse)
+                            if (API.DoesExtraExist(Vehicle.Handle, 12) && Vcfroot.EOVERRIDE.Extra12.IsElsControlled && Vcfroot.MISC.SceneLights.AllowUse)
                             {
-                                this._extras.SCL = new Extra.Extra(this, 12, _vcfroot.EOVERRIDE.Extra12);
+                                this._extras.SceneLights = new Extra.Extra(this, 12, Vcfroot.EOVERRIDE.Extra12);
                             }
-                            else if (_vcfroot.MISC.SceneLights.AllowUse)
+                            else if (Vcfroot.MISC.SceneLights.AllowUse)
                             {
-                                scene = new Scene(this);
+                                Scene = new Scene(this);
                             }
                         }
                         break;
                 }
             }
-            if (!String.IsNullOrEmpty(_vcfroot.MISC.ArrowboardType))
+            if (!String.IsNullOrEmpty(Vcfroot.MISC.ArrowboardType))
             {
-                switch (_vcfroot.MISC.ArrowboardType)
+                switch (Vcfroot.MISC.ArrowboardType)
                 {
                     case "bonnet":
-                        this._extras.BRD = new Board.ArrowBoard(this, _vcfroot.MISC);
+                        this._extras.Board = new Board.ArrowBoard(this, Vcfroot.MISC);
                         break;
                     case "boot":
-                        this._extras.BRD = new Board.ArrowBoard(this, _vcfroot.MISC);
+                        this._extras.Board = new Board.ArrowBoard(this, Vcfroot.MISC);
                         break;
                     case "boot2":
-                        this._extras.BRD = new Board.ArrowBoard(this, _vcfroot.MISC);
+                        this._extras.Board = new Board.ArrowBoard(this, Vcfroot.MISC);
                         break;
                     case "boots":
-                        this._extras.BRD = new Board.ArrowBoard(this, _vcfroot.MISC);
+                        this._extras.Board = new Board.ArrowBoard(this, Vcfroot.MISC);
                         break;
                     case "off":
-                        this._extras.BRD = new Board.ArrowBoard(this, _vcfroot.MISC);
+                        this._extras.Board = new Board.ArrowBoard(this, Vcfroot.MISC);
                         break;
                     default:
-                        this._extras.BRD = new Board.ArrowBoard(this, _vcfroot.MISC);
+                        this._extras.Board = new Board.ArrowBoard(this, Vcfroot.MISC);
                         break;
                 }
             }
-            if (_vcfroot.MISC.HasLadderControl)
+            if (Vcfroot.MISC.HasLadderControl)
             {
-                this._extras.LDR = new Gadgets.Ladder(this, _vcfroot.MISC);
+                this._extras.Ladder = new Gadgets.Ladder(this, Vcfroot.MISC);
+            }
+            if (_extras.PrimaryLights.Count == 0)
+            {
+                _prmPatterns = 0;
+                ElsUiPanel.SetUiDesc("--", ExtraEnum.PRML.ToString());
+            }
+            if (_extras.SecondaryLights.Count == 0)
+            {
+                _secPatterns = 0;
+                ElsUiPanel.SetUiDesc("--", ExtraEnum.SECL.ToString());
+            }
+            if (_extras.WarningLights.Count == 0)
+            {
+                _wrnPatterns = 0;
+                ElsUiPanel.SetUiDesc("--", ExtraEnum.WRNL.ToString());
             }
         }
 
 
         Vehicle IManagerEntry._vehicle { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        public void CleanUP()
+        public void CleanUP(bool tooFarAwayCleanup = false)
         {
-            foreach(Extra.Extra e in _extras.PRML.Values)
+            foreach(Extra.Extra e in _extras.PrimaryLights.Values)
             {
                 e.CleanUp();
             }
-            foreach (Extra.Extra e in _extras.SECL.Values)
+            foreach (Extra.Extra e in _extras.SecondaryLights.Values)
             { 
                 e.CleanUp();
             }
-            foreach (Extra.Extra e in _extras.WRNL.Values)
+            foreach (Extra.Extra e in _extras.WarningLights.Values)
             {
                 e.CleanUp();
             }
-            if (_extras.SBRN != null)
+            if (_extras.SteadyBurn != null)
             {
-                _extras.SBRN.CleanUp();
+                _extras.SteadyBurn.CleanUp();
             }
-            if (_extras.TDL != null)
+            if (_extras.TakedownLights != null)
             {
-               _extras.TDL.CleanUp();
+               _extras.TakedownLights.CleanUp();
             }
-            if (_extras.SCL != null)
+            if (_extras.SceneLights != null)
             {
-               _extras.SCL.CleanUp();
+               _extras.SceneLights.CleanUp();
             }
-            
-            
+            Vehicle = null;
         }
 
         public void LightsControlsRemote()

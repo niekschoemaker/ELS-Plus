@@ -1,6 +1,7 @@
 ﻿using CitizenFX.Core.Native;
 using ELS.FullSync;
 using ELS.Light;
+using Shared;
 using System.Collections.Generic;
 
 namespace ELS.Board
@@ -9,21 +10,12 @@ namespace ELS.Board
     {
         ILight lights;
         configuration.MISC _misc;
-        string _boardType;
-        private bool _hasBoard;
+        readonly string _boardType;
         private bool _raise;
-        int _speed = 2;
-        public bool HasBoard
-        {
-            get
-            {
-                return _hasBoard;
-            }
-            private set
-            {
-                _hasBoard = value;
-            }
-        }
+
+        public bool HasBoard { get; private set; }
+        internal int BoardDoorIndex { get; set; }
+        internal bool BoardRaised { get; set; }
 
         internal bool RaiseBoardNow
         {
@@ -33,42 +25,36 @@ namespace ELS.Board
             }
             set
             {
+                if (lights.Vehicle == null)
+                {
+                    return;
+                }
                 _raise = value;
                 if (RaiseBoardNow)
                 {
                     // RaiseBoard();
-                    API.SetVehicleDoorOpen(lights._vehicle.Handle, BoardDoorIndex, false, false);
+                    API.SetVehicleDoorOpen(lights.Vehicle.Handle, BoardDoorIndex, false, false);
                     BoardRaised = true;
                 }
                 else
                 {
                     //LowerBoard();
-                    API.SetVehicleDoorShut(lights._vehicle.Handle, BoardDoorIndex, false);
+                    API.SetVehicleDoorShut(lights.Vehicle.Handle, BoardDoorIndex, false);
                     BoardRaised = false;
                 }
             }
         }
 
-        internal int BoardDoorIndex
-        {
-            get; set;
-        }
-
-        internal bool BoardRaised
-        {
-            get; set;
-        }
-
         public Dictionary<string, object> GetData()
         {
             Dictionary<string, object> dic = new Dictionary<string, object>();
-            dic.Add("raised", RaiseBoardNow);
+            dic.Add(DataNames.BoardRaised, RaiseBoardNow);
             return dic;
         }
 
         public void SetData(IDictionary<string, object> data)
         {
-            BoardRaised = (bool.Parse(data["raised"].ToString()));
+            BoardRaised = (bool)data[DataNames.BoardRaised];
         }
 
         internal ArrowBoard(ILight light, configuration.MISC misc)
@@ -104,10 +90,6 @@ namespace ELS.Board
                     HasBoard = false;
                     break;
             }
-#if DEBUG
-            Utils.DebugWriteLine($"Added ArrowBoard of {_boardType}");
-#endif
         }
     }
-
 }

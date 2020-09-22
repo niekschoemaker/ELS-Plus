@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using ELSShared;
+using System.Collections;
 using System.Collections.Generic;
 using CitizenFX.Core;
 
@@ -19,26 +20,21 @@ namespace ELS.FullSync
             
         }
 
-        internal static void RequestData(long NetworkID)
+        internal static void SendDataBroadcast(IDictionary dic, int NetworkId)
         {
-            ELS.TriggerServerEvent("ELS:FullSync:Request", NetworkID);
+            BaseScript.TriggerServerEvent(EventNames.FullSyncBroadcast, dic, NetworkId);
         }
 
-        internal static void SendDataBroadcast(IDictionary dic,int PlayerId)
+        internal static void SendLightBroadcast(IDictionary dic, int NetworkId)
         {
-            ELS.TriggerServerEvent("ELS:FullSync:Broadcast",dic,PlayerId);
+
+            BaseScript.TriggerServerEvent(EventNames.LightSyncBroadcast, dic, NetworkId);
         }
-        internal static void SendDataUnicast(IDictionary dic,int PlayerID)
+
+        internal static void SendSirenBroadcast(IDictionary dic, int NetworkId)
         {
-            ELS.TriggerServerEvent("ELS:FullSync:Unicast", dic,PlayerID);
+            BaseScript.TriggerServerEvent(EventNames.SirenSyncBroadcast, dic, NetworkId);
         }
-    }
-    internal static class SetData
-    {
-//        SetData()
-//        {
-//
-//        }
     }
 
     internal interface IFullSyncComponent

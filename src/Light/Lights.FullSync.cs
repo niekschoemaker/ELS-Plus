@@ -1,9 +1,7 @@
 ﻿using ELS.FullSync;
+using Shared;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Light
 {
@@ -13,244 +11,179 @@ namespace ELS.Light
         {
 
             var dic = new Dictionary<string, object>();
-            var prm = new Dictionary<int, object>();
-            foreach (Extra.Extra e in _extras.PRML.Values)
-            {
-                prm.Add(e.Id, e.GetData());
-#if DEBUG
-                Utils.DebugWriteLine($"Added {e.Id} to prml sync data");
-#endif
-            }
-            var sec = new Dictionary<int, object>();
-            foreach (Extra.Extra e in _extras.SECL.Values)
-            {
-                sec.Add(e.Id, e.GetData());
-#if DEBUG
-                Utils.DebugWriteLine($"Added {e.Id} to secl sync data");
-#endif
+            var prm = GetPrimaryLightsData();
+            var sec = GetSecondaryLightsData();
+            var wrn = GetWarningLightsData();
 
-            }
-            var wrn = new Dictionary<int, object>();
-            foreach (Extra.Extra e in _extras.WRNL.Values)
-            {
-                wrn.Add(e.Id, e.GetData());
-#if DEBUG
-                Utils.DebugWriteLine($"Added {e.Id} to wrnl sync data");
-#endif
-
-            }
             if (prm != null && prm.Count > 0)
             {
-                dic.Add("PRML", prm);
-#if DEBUG
-                Utils.DebugWriteLine($"added PRML data");
-#endif
+                dic.Add(DataNames.PRML, prm);
             }
             if (sec != null && sec.Count > 0)
             {
-                dic.Add("SECL", sec);
-#if DEBUG
-                Utils.DebugWriteLine($"added secl data");
-#endif
-
+                dic.Add(DataNames.SECL, sec);
             }
             if (wrn != null && wrn.Count > 0)
             {
-                dic.Add("WRNL", wrn);
-#if DEBUG
-                Utils.DebugWriteLine($"added wrnl data");
-#endif
+                dic.Add(DataNames.WRNL, wrn);
+            }
+            if (_extras.SteadyBurn != null)
+            {
+                dic.Add(DataNames.SteadyBurn, _extras.SteadyBurn.GetData());
+            }
+            if (_extras.SceneLights != null)
+            {
+                dic.Add(DataNames.SceneLights, _extras.SceneLights.GetData());
+            }
+            if (_extras.TakedownLights != null)
+            {
+                dic.Add(DataNames.TakedownLights, _extras.TakedownLights.GetData());
 
             }
-            if (_extras.SBRN != null)
+            if (_extras.Board.HasBoard)
             {
-                dic.Add("SBRN", _extras.SBRN.GetData());
-#if DEBUG
-                Utils.DebugWriteLine($"added SBRN data");
-#endif
-
+                dic.Add(DataNames.Board, _extras.Board.GetData());
             }
-            if (_extras.SCL != null)
+            dic.Add(DataNames.PrimaryPattern, CurrentPrmPattern);
+            dic.Add(DataNames.SecondaryPattern, CurrentSecPattern);
+            dic.Add(DataNames.WarningPattern, CurrentWrnPattern);
+            dic.Add(DataNames.Stage, _stage.CurrentStage);
+            if (SpotLight != null)
             {
-                dic.Add("SCL", _extras.SCL.GetData());
-#if DEBUG
-                Utils.DebugWriteLine($"added SCL data");
-#endif
+                dic.Add(DataNames.Spotlight, SpotLight.GetData());
             }
-            if (_extras.TDL != null)
+            if (Scene != null)
             {
-                dic.Add("TDL", _extras.TDL.GetData());
-#if DEBUG
-                Utils.DebugWriteLine($"added TDL data");
-#endif
-
-            }
-            dic.Add("BRD", _extras.BRD.GetData());
-            dic.Add("PrmPatt", CurrentPrmPattern);
-            dic.Add("SecPatt", CurrentSecPattern);
-            dic.Add("WrnPatt", CurrentWrnPattern);
-            dic.Add("stage", _stage.CurrentStage);
-            if (spotLight != null)
-            {
-                dic.Add("spotlight", spotLight.GetData());
-            }
-            if (scene != null)
-            {
-                dic.Add("scene", scene.GetData());
+                dic.Add(DataNames.Scene, Scene.GetData());
             }
             return dic;
         }
 
+        public Dictionary<int, object> GetPrimaryLightsData()
+        {
+            var prm = new Dictionary<int, object>();
+            foreach (Extra.Extra e in _extras.PrimaryLights.Values)
+            {
+                prm.Add(e.Id, e.GetData());
+            }
+
+            return prm;
+        }
+
+        public Dictionary<int, object> GetSecondaryLightsData()
+        {
+            var sec = new Dictionary<int, object>();
+            foreach (Extra.Extra e in _extras.SecondaryLights.Values)
+            {
+                sec.Add(e.Id, e.GetData());
+            }
+
+            return sec;
+        }
+
+        public Dictionary<int, object> GetWarningLightsData()
+        {
+            var wrn = new Dictionary<int, object>();
+            foreach (Extra.Extra e in _extras.WarningLights.Values)
+            {
+                wrn.Add(e.Id, e.GetData());
+            }
+            return wrn;
+        }
+
         public void SetData(IDictionary<string, object> data)
         {
-
-
-
-            if (data.ContainsKey("PRML"))
+            if (data.TryGetValue(DataNames.PRML, out var prml))
             {
-#if DEBUG
-                Utils.DebugWriteLine($"Got PRML data");
-#endif
-                IDictionary<string, object> prm = (IDictionary<string, object>)data["PRML"];
-                foreach (Extra.Extra e in _extras.PRML.Values)
+                IDictionary<string, object> prm = (IDictionary<string, object>)prml;
+                foreach (Extra.Extra e in _extras.PrimaryLights.Values)
                 {
                     e.SetData((IDictionary<string, object>)prm[$"{e.Id}"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added {e.Id} from prml sync data");
-#endif
                 }
             }
-            if (data.ContainsKey("SECL"))
+            if (data.TryGetValue(DataNames.SECL, out var secl))
             {
-#if DEBUG
-                Utils.DebugWriteLine($"Got SECL DAta");
-#endif
-                IDictionary<string, object> sec = (IDictionary<string, object>)data["SECL"];
-                foreach (Extra.Extra e in _extras.SECL.Values)
+                IDictionary<string, object> sec = (IDictionary<string, object>)secl;
+                foreach (Extra.Extra e in _extras.SecondaryLights.Values)
                 {
                     e.SetData((IDictionary<string, object>)sec[$"{e.Id}"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added {e.Id} from secl sync data");
-#endif
-
                 }
             }
-            if (data.ContainsKey("WRNL"))
+            if (data.TryGetValue(DataNames.WRNL, out var wrnl))
             {
-#if DEBUG
-                Utils.DebugWriteLine($"Got WRNL data");
-#endif
-                IDictionary<string, object> wrn = (IDictionary<string, object>)data["WRNL"];
-                foreach (Extra.Extra e in _extras.WRNL.Values)
+                IDictionary<string, object> wrn = (IDictionary<string, object>)wrnl;
+                foreach (Extra.Extra e in _extras.WarningLights.Values)
                 {
                     e.SetData((IDictionary<string, object>)wrn[$"{e.Id}"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added {e.Id} from wrnl sync data");
-#endif
                 }
             }
             try
             {
-                if (data.ContainsKey("SBRN"))
+                if (data.TryGetValue(DataNames.SteadyBurn, out var sbrn))
                 {
-                    _extras.SBRN.SetData((IDictionary<string, object>)data["SBRN"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added SBRN from sync data");
-#endif
+                    _extras.SteadyBurn.SetData((IDictionary<string, object>)sbrn);
                 }
             }
             catch (Exception e)
             {
-#if DEBUG
                 Utils.DebugWriteLine($"SBRN error: {e.Message}");
-#endif
             }
             try
             {
-                if (data.ContainsKey("SCL"))
+                if (data.TryGetValue(DataNames.SceneLights, out var scl))
                 {
-                    _extras.SCL.SetData((IDictionary<string, object>)data["SCL"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added SCL from sync data");
-#endif
+                    _extras.SceneLights.SetData((IDictionary<string, object>)scl);
                 }
             }
             catch (Exception e)
             {
-#if DEBUG
                 Utils.DebugWriteLine($"SCL error: {e.Message}");
-#endif
             }
             try
             {
-                if (data.ContainsKey("TDL"))
+                if (data.TryGetValue(DataNames.TakedownLights, out var tdl))
                 {
-                    _extras.TDL.SetData((IDictionary<string, object>)data["TDL"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added TDL from sync data");
-#endif
+                    _extras.TakedownLights.SetData((IDictionary<string, object>)tdl);
                 }
             }
             catch (Exception e)
             {
-#if DEBUG
                 Utils.DebugWriteLine($"TDL error: {e.Message}");
-#endif
             }
             try
             {
-                if (data.ContainsKey("BRD"))
+                if (data.TryGetValue(DataNames.Board, out var brd))
                 {
-#if DEBUG
-                    Utils.DebugWriteLine($"Got BRD from sync data");
-#endif
-                    _extras.BRD.SetData((IDictionary<string, object>)data["BRD"]);
-#if DEBUG
-                    Utils.DebugWriteLine($"Added BRD from sync data");
-#endif
+                    _extras.Board.SetData((IDictionary<string, object>)brd);
                 }
             }
             catch (Exception e)
             {
-#if DEBUG
                 Utils.DebugWriteLine($"BRD error: {e.Message}");
-#endif
             }
-            if (data.ContainsKey("PrmPatt"))
+            if (data.TryGetValue(DataNames.PrimaryPattern, out var prmPatt))
             {
-                CurrentPrmPattern = int.Parse(data["PrmPatt"].ToString());
-#if DEBUG
-                Utils.DebugWriteLine($"Added PrmPatt from sync data");
-#endif
+                CurrentPrmPattern = (int)prmPatt;
             }
-            if (data.ContainsKey("SecPatt"))
+            if (data.TryGetValue(DataNames.SecondaryPattern, out var secPatt))
             {
-                CurrentSecPattern = int.Parse(data["SecPatt"].ToString());
-#if DEBUG
-                Utils.DebugWriteLine($"Added SecPatt from sync data");
-#endif
+                CurrentSecPattern = int.Parse(secPatt.ToString());
             }
-            if (data.ContainsKey("WrnPatt"))
+            if (data.TryGetValue(DataNames.WarningPattern, out var wrnPatt))
             {
-                CurrentWrnPattern = int.Parse(data["WrnPatt"].ToString());
-#if DEBUG
-                Utils.DebugWriteLine($"Added WrnPatt from sync data");
-#endif
+                CurrentWrnPattern = int.Parse(wrnPatt.ToString());
             }
-            if (data.ContainsKey("stage"))
+            if (data.TryGetValue(DataNames.Stage, out var stage))
             {
-                _stage.SetStage(int.Parse(data["stage"].ToString()));
-#if DEBUG
-                Utils.DebugWriteLine($"Added stage from sync data");
-#endif
+                _stage.SetStage(int.Parse(stage.ToString()));
             }
-            if (spotLight != null)
+            if (SpotLight != null)
             {
-                spotLight.SetData((IDictionary<string, object>)data["spotlight"]);
+                SpotLight.SetData((IDictionary<string, object>)data[DataNames.Spotlight]);
             }
-            if (scene != null)
+            if (Scene != null)
             {
-                scene.SetData((IDictionary<string, object>)data["scene"]);
+                Scene.SetData((IDictionary<string, object>)data[DataNames.Scene]);
             }
         }
     }

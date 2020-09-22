@@ -1,15 +1,10 @@
 ﻿using CitizenFX.Core;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Light
 {
     internal interface IManagerEntry
     {
-        void CleanUP();
+        void CleanUP(bool tooFarAwayCleanup = false);
         void Ticker();
         void ControlTicker();
         void LightsControlsRemote();

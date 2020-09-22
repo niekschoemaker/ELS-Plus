@@ -1,10 +1,10 @@
 ﻿using CitizenFX.Core;
+using CitizenFX.Core.Native;
 using ELS.configuration;
+using Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Light
 {
@@ -13,6 +13,14 @@ namespace ELS.Light
 
         public async void ControlTicker()
         {
+            if (!Vehicle.Exists(Vehicle))
+            {
+                Init();
+                if (!Vehicle.Exists(Vehicle))
+                {
+                    return;
+                }
+            }
             //KB Controls
             ToggleSecLKB();
             ToggleWrnLKB();
@@ -30,31 +38,39 @@ namespace ELS.Light
 
         public async void Ticker()
         {
-            if (_extras.SBRN != null)
+            if (!Vehicle.Exists(Vehicle))
             {
-                _extras.SBRN.ExtraTicker();
+                Init();
+                if (!Vehicle.Exists(Vehicle))
+                {
+                    return;
+                }
             }
-            if (_extras.SCL != null)
+            if (_extras.SteadyBurn != null)
             {
-                _extras.SCL.ExtraTicker();
+                _extras.SteadyBurn.ExtraTicker();
             }
-            if (_extras.TDL != null)
+            if (_extras.SceneLights != null)
             {
-                _extras.TDL.ExtraTicker();
+                _extras.SceneLights.ExtraTicker();
+            }
+            if (_extras.TakedownLights != null)
+            {
+                _extras.TakedownLights.ExtraTicker();
             }
 
-            if (spotLight != null && spotLight.TurnedOn)
+            if (SpotLight != null && SpotLight.TurnedOn)
             {
-                spotLight.RunTick();
+                SpotLight.RunTick();
             }
-            if (scene != null && scene.TurnedOn)
+            if (Scene != null && Scene.TurnedOn)
             {
-                scene.RunTick();
+                Scene.RunTick();
             }
             //foreach (Extra.Extra prim in _extras.PRML.Values)
-            for (int i = 0; i < _extras.PRML.Count; i++)
+            for (int i = 0; i < _extras.PrimaryLights.Count; i++)
             {
-                _extras.PRML.ElementAt(i).Value.ExtraTicker();
+                _extras.PrimaryLights.ElementAt(i).Value.ExtraTicker();
                 if (_stage != null)
                 {
                     switch (_stage.CurrentStage)
@@ -81,9 +97,9 @@ namespace ELS.Light
                 }
             }
             //foreach (Extra.Extra sec in _extras.SECL.Values)
-            for (int i = 0; i < _extras.SECL.Count; i++)
+            for (int i = 0; i < _extras.SecondaryLights.Count; i++)
             {
-                _extras.SECL.ElementAt(i).Value.ExtraTicker();
+                _extras.SecondaryLights.ElementAt(i).Value.ExtraTicker();
                 if (_stage != null)
                 {
                     switch (_stage.CurrentStage)
@@ -110,9 +126,9 @@ namespace ELS.Light
                 }
             }
             //foreach (Extra.Extra wrn in _extras.WRNL.Values)
-            for (int i = 0; i < _extras.WRNL.Count; i++)
+            for (int i = 0; i < _extras.WarningLights.Count; i++)
             {
-                _extras.WRNL.ElementAt(i).Value.ExtraTicker();
+                _extras.WarningLights.ElementAt(i).Value.ExtraTicker();
                 if (_stage != null)
                 {
                     switch (_stage.CurrentStage)
@@ -163,7 +179,7 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleSecL) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ToggleSecLights();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleSecL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.SECL, GetSecondaryLightsData());
             }
         }
 
@@ -173,7 +189,7 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleWrnL) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ToggleWrnLights();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleWrnL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.WRNL, GetWarningLightsData());
             }
         }
 
@@ -185,13 +201,13 @@ namespace ELS.Light
 #if DEBUG
                 CitizenFX.Core.Debug.WriteLine($"Is Board raised  {_extras.BRD.BoardRaised}");
 #endif
-                if (_extras.BRD.BoardRaised)
+                if (_extras.Board.BoardRaised)
                 {
-                    _extras.BRD.RaiseBoardNow = false;
+                    _extras.Board.RaiseBoardNow = false;
                 }
                 else
                 {
-                    _extras.BRD.RaiseBoardNow = true;
+                    _extras.Board.RaiseBoardNow = true;
                 }
                 //RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleWrnL, _vehicle, true, Game.Player.ServerId);
             }
@@ -203,17 +219,27 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleCrsL) && !Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ToggleCrs();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleCrsL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.PRML, GetPrimaryLightsData());
             }
         }
 
         internal void ToggleTdlKB()
         {
             Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.ToggleTdl);
-            if ((Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleTdl) && !Game.IsControlPressed(0, Control.CharacterWheel)) && Game.CurrentInputMode == InputMode.MouseAndKeyboard || (Global.AllowController && Game.IsControlJustPressed(2, ElsConfiguration.GPBindings.ToggleTdl) && Game.CurrentInputMode == InputMode.GamePad))
+            if ((Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleTdl) && !Game.IsControlPressed(0, Control.CharacterWheel) && !API.IsPauseMenuActive()) && Game.CurrentInputMode == InputMode.MouseAndKeyboard || (Global.AllowController && Game.IsControlJustPressed(2, ElsConfiguration.GPBindings.ToggleTdl) && Game.CurrentInputMode == InputMode.GamePad))
             {
                 ToggleTdl();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleTDL, _vehicle, true, Game.Player.ServerId);
+                var dic = new Dictionary<string, object>();
+                if (_extras.TakedownLights != null)
+                {
+                    dic.Add(DataNames.TakedownLights, _extras.TakedownLights.GetData());
+                }
+                if (SpotLight != null)
+                {
+                    dic.Add(DataNames.Spotlight, SpotLight.GetData());
+                }
+
+                RemoteEventManager.SendLightEvent(ElsVehicle, dic);
             }
         }
 
@@ -223,7 +249,7 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleTdl) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ToggleScl();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleSCL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.SceneLights, _extras.SceneLights.GetData());
             }
         }
 
@@ -233,12 +259,12 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ChgPattPrmL) && !Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ChgPrmPatt(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ChgPattPrmL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.PrimaryPattern, CurrentPrmPattern);
             }
             else if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ChgPattPrmL) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ChgPrmPatt(true);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ChgPattPrmL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.PrimaryPattern, CurrentPrmPattern);
             }
         }
 
@@ -248,12 +274,12 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ChgPattSecL) && !Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ChgSecPatt(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ChangeSecPatt, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.SecondaryPattern, CurrentSecPattern);
             }
             else if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ChgPattSecL) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ChgSecPatt(true);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ChangeSecPatt, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.SecondaryPattern, CurrentSecPattern);
             }
         }
 
@@ -263,12 +289,12 @@ namespace ELS.Light
             if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ChgPattWrnL) && !Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ChgWrnPatt(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ChgPattWrnL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.WarningPattern, CurrentWrnPattern);
             }
             else if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ChgPattWrnL) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
                 ChgWrnPatt(true);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ChgPattWrnL, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.WarningPattern, CurrentWrnPattern);
             }
         }
 
@@ -277,19 +303,13 @@ namespace ELS.Light
             Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.ToggleLstg);
             if ((Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleLstg) && !Game.IsControlPressed(0, Control.CharacterWheel)) && Game.CurrentInputMode == InputMode.MouseAndKeyboard || (Global.AllowController && Game.IsControlJustPressed(2, ElsConfiguration.GPBindings.ToggleLstg) && Game.CurrentInputMode == InputMode.GamePad))
             {
-#if DEBUG
-                Utils.DebugWriteLine("Toggle Light stage");
-#endif
                 ToggleLightStage();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleLstg, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.Stage, CurrentStage);
             }
             else if (Game.IsDisabledControlJustPressed(0, ElsConfiguration.KBBindings.ToggleLstg) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
-#if DEBUG
-                Utils.DebugWriteLine("Toggle Light stage Inverse");
-#endif
                 ToggleLightStageInverse();
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ToggleLstg, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendLightEvent(ElsVehicle, DataNames.Stage, CurrentStage);
             }
         }
 

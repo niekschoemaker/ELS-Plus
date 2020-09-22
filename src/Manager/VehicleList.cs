@@ -1,22 +1,15 @@
 ﻿using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Manager
 {
     class VehicleList : Dictionary<int,ELSVehicle>
     {
         internal Dictionary<int,Tuple<int,int>> VehRegAttempts;
-        //public new void Add(ELSVehicle veh)
-        //{
-        //    base.Add(veh);
-        //}
 
         internal VehicleList()
         {
@@ -24,7 +17,7 @@ namespace ELS.Manager
         }
         public void Add(int NetworkID)
         {
-            var veh = new ELSVehicle(API.NetToVeh(NetworkID));
+            var veh = new ELSVehicle(API.NetToVeh(NetworkID), NetworkID);
             Add(NetworkID,veh);
         }
         public bool IsReadOnly => throw new NotImplementedException();
@@ -53,9 +46,7 @@ namespace ELS.Manager
             }
             catch (Exception e)
             {
-#if DEBUG
                 Utils.DebugWriteLine($"VehicleList Error: {e.Message}");
-#endif
             }
         }
 
@@ -63,7 +54,7 @@ namespace ELS.Manager
         {
             if (NetworkID == 0)
             {
-                CitizenFX.Core.Debug.WriteLine("ERROR Try to add vehicle\nNetwordID equals 0");
+                Debug.WriteLine("ERROR Try to add vehicle\nNetwordID equals 0");
                 vehicle = null;
                 return false;
             }
@@ -80,26 +71,32 @@ namespace ELS.Manager
                 }
                 try
                 {
-                    ELSVehicle veh = null;
-                    int handle = API.NetToVeh(NetworkID);
-                    if (handle == 0)
+                    if (API.NetworkDoesNetworkIdExist(NetworkID))
                     {
-                        veh = new ELSVehicle(Game.PlayerPed.CurrentVehicle.Handle);
+                        ELSVehicle veh = null;
+                        int handle = API.NetToVeh(NetworkID);
+                        if (handle == 0)
+                        {
+                            veh = new ELSVehicle(Game.PlayerPed.CurrentVehicle.Handle, Game.PlayerPed.CurrentVehicle.NetworkId);
+                        }
+                        else
+                        {
+                            veh = new ELSVehicle(handle, NetworkID);
+                        }
+                        Add(NetworkID, veh);
+                        //CurrentlyRegisteringVehicle.Remove(NetworkID);
+                        vehicle = veh;
+                        return true;
                     }
                     else
                     {
-                        veh = new ELSVehicle(handle);
+                        vehicle = null;
+                        return false;
                     }
-                    Add(NetworkID,veh);
-                    //CurrentlyRegisteringVehicle.Remove(NetworkID);
-                    vehicle = veh;
-                    return true;
                 }
                 catch (Exception ex)
                 {
-#if DEBUG
-                    Utils.DebugWriteLine($"Exsits Error: {ex.Message} due to {ex.InnerException}");
-#endif
+                    Utils.DebugWriteLine($"Exsits Error: {ex.Message} due to {ex.InnerException} {ex.StackTrace} {ex}");
                     //CurrentlyRegisteringVehicle.Remove(NetworkID);
                     vehicle = null;
                     return false;
@@ -118,7 +115,7 @@ namespace ELS.Manager
         {
             if (NetworkID == 0)
             {
-                CitizenFX.Core.Debug.WriteLine("ERROR NetwordID equals 0\n");
+                Debug.WriteLine("ERROR NetwordID equals 0\n");
                 vehicle = null;
                 return false;
             }
@@ -136,46 +133,47 @@ namespace ELS.Manager
                 try
                 {
                     ELSVehicle veh = null;
-                    int handle = API.NetworkGetEntityFromNetworkId(NetworkID);
-                    if (handle == 0 && PlayerId != -1)
+                    if (PlayerId != -1 && !API.NetworkDoesNetworkIdExist(NetworkID) && API.GetPlayerFromServerId(PlayerId) != -1)
                     {
                         Player player = new Player(API.GetPlayerFromServerId(PlayerId));
-#if DEBUG
-                        Utils.DebugWriteLine($"Registering vehicle with netid of {NetworkID} to list from {player.Name}");
-#endif
-                        if (!player.Character.IsSittingInELSVehicle())
+                        var ped = player.Character;
+                        var currentVehicle = ped.CurrentVehicle;
+                        Utils.DebugWriteLine($"Registering vehicle with netid of {NetworkID} ({player.Character?.CurrentVehicle?.Handle}) to list from {player.Name}");
+                        if (currentVehicle == null || !currentVehicle.IsEls())
                         {
-#if DEBUG
-                            Utils.DebugWriteLine($"{player.Name} is not in an Els vehicle");
-#endif
+                            veh = new ELSVehicle(0, NetworkID, data);
+                        }
+                        if (veh == null)
+                        {
+                            veh = new ELSVehicle(currentVehicle.Handle, currentVehicle.NetworkId, data);
+                        }
+                        if (veh == null)
+                        {
                             vehicle = null;
+                            veh = null;
                             return false;
                         }
-                        veh = new ELSVehicle(player.Character.CurrentVehicle.Handle, data);
                     }
                     else
                     {
-#if DEBUG
-                        Utils.DebugWriteLine($"Registering vehicle {NetworkID} to list from netid to veh");
-#endif
-                        veh = new ELSVehicle(handle,data);
+                        if (API.NetworkDoesNetworkIdExist(NetworkID))
+                        {
+                            int handle = API.NetworkGetEntityFromNetworkId(NetworkID);
+                            veh = new ELSVehicle(handle, NetworkID, data);
+                        }
                     }
                     if (veh != null)
                     {
                         //CurrentlyRegisteringVehicle.Remove(NetworkID);
                         Add(NetworkID, veh);
-#if DEBUG
                         Utils.DebugWriteLine($"Added {NetworkID} to vehicle list");
-#endif
                         vehicle = veh;
                         return true;
                     } 
                     else
                     {
                         //CurrentlyRegisteringVehicle.Remove(NetworkID);
-#if DEBUG
                         Utils.DebugWriteLine("Failed to add vehicle to list please try again");
-#endif
                         vehicle = null;
                         return false;
                     }
@@ -183,9 +181,8 @@ namespace ELS.Manager
                 catch (Exception ex)
                 {
                     //CurrentlyRegisteringVehicle.Remove(NetworkID);
-#if DEBUG
-                    Utils.DebugWriteLine($"Exsits Error With Data: {ex.Message}");
-#endif
+                    Utils.DebugWriteLine($"Exsits Error With Data: {ex.Message}\n" +
+                        $"{ex}");
                     vehicle = null;
                     return false;
                     throw ex;
@@ -194,9 +191,7 @@ namespace ELS.Manager
             }
             else
             {
-#if DEBUG
                 Utils.DebugWriteLine($"Returning vehicle {NetworkID} from list");
-#endif
                 vehicle = this[NetworkID];
                 return true;
             }

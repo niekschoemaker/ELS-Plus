@@ -1,9 +1,6 @@
 ﻿using ELS.FullSync;
-using System;
+using Shared;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Extra
 {
@@ -15,19 +12,15 @@ namespace ELS.Extra
             
             Dictionary<string, object> dic = new Dictionary<string, object>();
            
-            dic.Add("patternrunning", IsPatternRunning);
-            dic.Add("on", TurnedOn);
+            dic.Add(DataNames.PatternRunning, IsPatternRunning);
+            dic.Add(DataNames.TurnedOn, TurnedOn);
             return dic;
         }
 
         public void SetData(IDictionary<string, object> data)
         {
-#if DEBUG
-            CitizenFX.Core.Debug.WriteLine($"Got data for {_Id} setting data");
-#endif
-            //PatternNum = int.Parse(data["pattern"].ToString());
-            IsPatternRunning = bool.Parse(data["patternrunning"].ToString());
-            TurnedOn = bool.Parse(data["on"].ToString());
+            IsPatternRunning = (bool)data[DataNames.PatternRunning];
+            TurnedOn = (bool)data[DataNames.TurnedOn];
         }
 
     }

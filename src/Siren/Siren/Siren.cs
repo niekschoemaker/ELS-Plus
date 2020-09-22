@@ -21,46 +21,58 @@ namespace ELS.Siren
     {
         private Vcfroot _vcf;
         internal bool dual_siren;
+        public ELSVehicle _elsVehicle { get; set; }
         public Vehicle _vehicle { get; set; }
         public MainSiren _mainSiren;
+        private bool _isInitialized = false;
         IPatterns _patternController;
         internal Tones _tones;
-        public Siren(Vehicle vehicle,Vcfroot vcfroot,[Optional]IDictionary<string,object> data, IPatterns patt)
+        public Siren(ELSVehicle vehicle,Vcfroot vcfroot,[Optional]IDictionary<string,object> data, IPatterns patt)
         {
             _vcf = vcfroot;
-            _vehicle = vehicle;
+            _elsVehicle = vehicle;
             _patternController = patt;
-            Function.Call(Hash.DISABLE_VEHICLE_IMPACT_EXPLOSION_ACTIVATION, _vehicle, true);
 #if DEBUG
             Utils.DebugWriteLine(_vehicle.DisplayName);
 #endif
             _tones = new Tones
             {
-                horn = new Tone(vcfroot.SOUNDS.MainHorn.AudioString, _vehicle, ToneType.Horn, true),
-                tone1 = new Tone(vcfroot.SOUNDS.SrnTone1.AudioString, _vehicle, ToneType.SrnTon1,vcfroot.SOUNDS.SrnTone1.AllowUse),
-                tone2 = new Tone(vcfroot.SOUNDS.SrnTone2.AudioString, _vehicle, ToneType.SrnTon2, vcfroot.SOUNDS.SrnTone2.AllowUse),
-                tone3 = new Tone(vcfroot.SOUNDS.SrnTone3.AudioString, _vehicle, ToneType.SrnTon3, vcfroot.SOUNDS.SrnTone3.AllowUse),
-                tone4 = new Tone(vcfroot.SOUNDS.SrnTone4.AudioString, _vehicle, ToneType.SrnTon4, vcfroot.SOUNDS.SrnTone4.AllowUse),
-                panicAlarm = new Tone(vcfroot.SOUNDS.PanicMde.AudioString, _vehicle, ToneType.SrnPnic, vcfroot.SOUNDS.PanicMde.AllowUse)
+                horn = new Tone(_vcf.SOUNDS.MainHorn.AudioString, _elsVehicle, ToneType.Horn, true, soundSet: _vcf.SOUNDS.MainHorn.SoundSet),
+                tone1 = new Tone(_vcf.SOUNDS.SrnTone1.AudioString, _elsVehicle, ToneType.SrnTon1, _vcf.SOUNDS.SrnTone1.AllowUse, soundSet: _vcf.SOUNDS.SrnTone1.SoundSet),
+                tone2 = new Tone(_vcf.SOUNDS.SrnTone2.AudioString, _elsVehicle, ToneType.SrnTon2, _vcf.SOUNDS.SrnTone2.AllowUse, soundSet: _vcf.SOUNDS.SrnTone2.SoundSet),
+                tone3 = new Tone(_vcf.SOUNDS.SrnTone3.AudioString, _elsVehicle, ToneType.SrnTon3, _vcf.SOUNDS.SrnTone3.AllowUse, soundSet: _vcf.SOUNDS.SrnTone3.SoundSet),
+                tone4 = new Tone(_vcf.SOUNDS.SrnTone4.AudioString, _elsVehicle, ToneType.SrnTon4, _vcf.SOUNDS.SrnTone4.AllowUse, soundSet: _vcf.SOUNDS.SrnTone4.SoundSet),
             };
 
+            _mainSiren = new MainSiren(ref _tones);
             dual_siren = false;
 
-            _mainSiren = new MainSiren(ref _tones);
-
             if (data != null) SetData(data);
-            ElsUiPanel.SetUiDesc(_mainSiren.currentTone.Type, "SRN");
+            ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
             ElsUiPanel.SetUiDesc("--", "HRN");
         }
 
-        public void CleanUP()
+        public void CleanUP(bool tooFarAwayCleanup = false)
         {
+            var vehicle = _elsVehicle.GetVehicle;
+            if (Vehicle.Exists(vehicle))
+            {
+                vehicle.IsSirenActive = false;
+            }
+            if (!tooFarAwayCleanup)
+            {
+                _tones.horn.SetState(false);
+                _tones.tone1.SetState(false);
+                _tones.tone2.SetState(false);
+                _tones.tone3.SetState(false);
+                _tones.tone4.SetState(false);
+            }
+            
             _tones.horn.CleanUp();
             _tones.tone1.CleanUp();
             _tones.tone2.CleanUp();
             _tones.tone3.CleanUp();
             _tones.tone4.CleanUp();
-            _tones.panicAlarm.CleanUp();
         }
 
         internal void SyncUi()

@@ -15,14 +15,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using CitizenFX.Core;
 using CitizenFX.Core.Native;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace ELS_Server
 {
@@ -51,7 +45,7 @@ namespace ELS_Server
             {
                 SharpConfig.Configuration u = SharpConfig.Configuration.LoadFromString(data);
                 ElsCarAdminOnly = u["ADMIN"]["ElsCarAdminOnly"].BoolValue;
-                CacheClear = u["GENERAL"]["ClearCache"].IntValue * 60 * 100;
+                CacheClear = u["GENERAL"]["ClearCache"].IntValue * 60 * 1000;
                 ElsVehicleGroups = new List<string>();
                 foreach(string s in u["ADMIN"]["Groups"].StringValueArray)
                 {

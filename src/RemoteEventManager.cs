@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using CitizenFX.Core;
-using CitizenFX.Core.Native;
+using System.Collections.Generic;
 
 namespace ELS
 {
@@ -58,7 +58,8 @@ namespace ELS
             MoveLadderLeft,
             MoveLadderRight,
             ToggleInd,
-            ToggleBrd
+            ToggleBrd,
+            FullSync
         }
         internal enum MessageTypes
         {
@@ -70,17 +71,44 @@ namespace ELS
         internal delegate void RemoteMessageRecievedHandler();
         internal static event RemoteMessageRecievedHandler RemoteMessageRecieved;
 
-        internal static void SendEvent(Commands type, Vehicle vehicle, bool state, int playerID)
+        internal static void SendEvent(Commands type, Vehicle vehicle, bool state)
         {
-            CitizenFX.Core.Debug.WriteLine($"sendding data for netID {vehicle.GetNetworkId()} : {state}");
-            Manager.VehicleManager.SyncRequestReply(type, vehicle.GetNetworkId(),playerID);
+            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId} : {state}");
+            Manager.VehicleManager.SyncRequestReply(type, vehicle.NetworkId);
+        }
 
-            //var netId = Function.Call<int>(Hash.VEH_TO_NET, vehicle.Handle);
-            //var ped = vehicle.GetPedOnSeat(VehicleSeat.Driver);
-            //vehicle.RegisterAsNetworked();
-            //vehicle.SetExistOnAllMachines(true);
-            // BaseScript.TriggerServerEvent("ELS", type.ToString(), vehicle.GetNetworkId(), playerID, state);
+        internal static void SendEvent(Commands type, ELSVehicle vehicle, bool state)
+        {
+            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId} : {state}");
+            Manager.VehicleManager.SyncRequestReply(type, vehicle.NetworkId);
+        }
 
+        internal static void SendEvent(ELSVehicle vehicle, Dictionary<string, object> data)
+        {
+            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId}");
+            FullSync.FullSyncManager.SendDataBroadcast(data, vehicle.NetworkId);
+        }
+
+        internal static void SendLightEvent(ELSVehicle vehicle, string key, object value)
+        {
+            Debug.WriteLine($"sendding data for netID {key} : {value}");
+            var data = new Dictionary<string, object>
+            {
+                { key, value }
+            };
+            SendLightEvent(vehicle, data);
+        }
+
+        internal static void SendLightEvent(ELSVehicle vehicle, Dictionary<string, object> data)
+        {
+            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId}");
+            FullSync.FullSyncManager.SendLightBroadcast(data, vehicle.NetworkId);
+        }
+
+        internal static void SendSirenEvent(ELSVehicle vehicle, Dictionary<string, object> data)
+        {
+            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId}");
+            FullSync.FullSyncManager.SendSirenBroadcast(data, vehicle.NetworkId);
         }
     }
 }

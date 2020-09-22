@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using ELS.NUI;
+using System;
 using System.Threading.Tasks;
-using ELS.configuration;
-using ELS.NUI;
-using CitizenFX.Core;
 
 namespace ELS.Light
 {
@@ -26,9 +21,6 @@ namespace ELS.Light
             CurrentStage = 0;
             vehicleId = veh;
             ActivationType = acttype.ToLower();
-#if DEBUG
-            Utils.DebugWriteLine($"Light Stage activation type is {ActivationType}");
-#endif
         }
 
         internal int CurrentStage
@@ -37,7 +29,7 @@ namespace ELS.Light
             private set
             {
                 stage = value;
-                if (Game.PlayerPed.IsSittingInELSVehicle() && vehicleId == Game.PlayerPed.CurrentVehicle.GetNetworkId())
+                if (ELS.ped.IsSittingInELSVehicle() && vehicleId == ELS.CurrentVehicle.NetworkId)
                 {
                     ElsUiPanel.ToggleStages(CurrentStage);
                 }

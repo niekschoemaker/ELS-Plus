@@ -3,11 +3,8 @@ using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using ELS.FullSync;
 using ELS.Light;
-using System;
+using Shared;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS.Gadgets
 {
@@ -70,7 +67,7 @@ namespace ELS.Gadgets
         public Dictionary<string, object> GetData()
         {
             Dictionary<string, object> dic = new Dictionary<string, object>();
-            dic.Add("raised", RaiseBoardNow);
+            dic.Add(DataNames.BoardRaised, RaiseBoardNow);
             return dic;
         }
 
@@ -103,9 +100,6 @@ namespace ELS.Gadgets
                     LadderVerticalIndex = 5;
                     break;
             }
-#if DEBUG
-            Utils.DebugWriteLine($"Added Ladder");
-#endif
         }
 
         internal void LadderTicker()
@@ -117,22 +111,24 @@ namespace ELS.Gadgets
 
         internal void RaiseLowerLadder()
         {
-            VerticalAngle = API.GetVehicleDoorAngleRatio(lights._vehicle.Handle, LadderVerticalIndex);
-            if (Game.IsControlPressed(0, Control.PhoneUp) && Game.PlayerPed.IsSittingInELSVehicle() && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
+            if(lights.Vehicle == null)
             {
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MoveLadderUp, lights._vehicle, true, Game.Player.ServerId);
-                VerticalAngle = VerticalAngle + 0.029999999f;
+                return;
+            }
+            VerticalAngle = API.GetVehicleDoorAngleRatio(lights.Vehicle.Handle, LadderVerticalIndex);
+            if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            {
+                VerticalAngle += 0.029999999f;
 
             }
-            if (Game.IsControlPressed(0, Control.PhoneDown) && Game.PlayerPed.IsSittingInELSVehicle() && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
+            if (Game.IsControlPressed(0, Control.PhoneDown) && ELS.ped.IsSittingInELSVehicle() && ELS.ped.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
 
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MoveLadderDown, lights._vehicle, true, Game.Player.ServerId);
-                VerticalAngle = VerticalAngle - 0.029999999f;
+                VerticalAngle -= 0.029999999f;
             }
-            if (API.IsVehicleDoorFullyOpen(lights._vehicle.Handle, LadderVerticalIndex) || VerticalAngle <= 0.80000001f)
+            if (API.IsVehicleDoorFullyOpen(lights.Vehicle.Handle, LadderVerticalIndex) || VerticalAngle <= 0.80000001f)
             {
-                API.SetVehicleDoorControl(lights._vehicle.Handle, LadderVerticalIndex, _speed, VerticalAngle);
+                API.SetVehicleDoorControl(lights.Vehicle.Handle, LadderVerticalIndex, _speed, VerticalAngle);
             }
             if (VerticalAngle > .25)
             {
@@ -142,22 +138,24 @@ namespace ELS.Gadgets
 
         internal void RotateLadder()
         {
-            VerticalAngle = API.GetVehicleDoorAngleRatio(lights._vehicle.Handle, LadderVerticalIndex);
-            if (Game.IsControlPressed(0, Control.PhoneUp) && Game.PlayerPed.IsSittingInELSVehicle() && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
+            if(lights.Vehicle == null)
             {
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MoveLadderLeft, lights._vehicle, true, Game.Player.ServerId);
-                HorizontalAngle = HorizontalAngle + 0.029999999f;
+                return;
+            }
+            VerticalAngle = API.GetVehicleDoorAngleRatio(lights.Vehicle.Handle, LadderVerticalIndex);
+            if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            {
+                HorizontalAngle += 0.029999999f;
 
             }
-            if (Game.IsControlPressed(0, Control.PhoneDown) && Game.PlayerPed.IsSittingInELSVehicle() && Game.PlayerPed.CurrentVehicle.GetNetworkId() == lights._vehicle.GetNetworkId())
+            if (Game.IsControlPressed(0, Control.PhoneDown) && ELS.ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
 
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MoveLadderRight, lights._vehicle, true, Game.Player.ServerId);
-                HorizontalAngle = HorizontalAngle - 0.019999999f;
+                HorizontalAngle -= 0.019999999f;
             }
-            if (API.IsVehicleDoorFullyOpen(lights._vehicle.Handle, LadderHorizontalIndex) || VerticalAngle <= 0.80000001f)
+            if (API.IsVehicleDoorFullyOpen(lights.Vehicle.Handle, LadderHorizontalIndex) || VerticalAngle <= 0.80000001f)
             {
-                API.SetVehicleDoorControl(lights._vehicle.Handle, LadderHorizontalIndex, _speed, VerticalAngle);
+                API.SetVehicleDoorControl(lights.Vehicle.Handle, LadderHorizontalIndex, _speed, VerticalAngle);
             }
             if (HorizontalAngle > .25 || HorizontalAngle < -.25)
             {

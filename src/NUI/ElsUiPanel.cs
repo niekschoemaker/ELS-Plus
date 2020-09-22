@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CitizenFX.Core;
-using System.Dynamic;
+﻿using CitizenFX.Core;
 using CitizenFX.Core.Native;
-using System.Threading;
-using System.IO;
-using Newtonsoft.Json.Linq;
 using ELS.configuration;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 
 namespace ELS.NUI
 {
@@ -58,7 +52,7 @@ namespace ELS.NUI
             Utils.DebugWriteLine("Enabling UI");
 #endif
             API.SendNuiMessage("{\"type\":\"enableui\", \"enable\":true}");
-            API.SetNuiFocus(true, true);
+            //API.SetNuiFocus(true, true);
             _enabled = 2;
         }
 
@@ -70,7 +64,7 @@ namespace ELS.NUI
             Utils.DebugWriteLine("Disabling Ui");
 #endif
             API.SendNuiMessage("{\"type\":\"enableui\", \"enable\":false}");
-            API.SetNuiFocus(false, false);
+            //API.SetNuiFocus(false, false);
             _enabled = 0;
         }
 
@@ -82,7 +76,6 @@ namespace ELS.NUI
             Utils.DebugWriteLine("Showing Ui");
 #endif
             API.SendNuiMessage("{\"type\":\"enableui\", \"enable\":true}");
-            API.SetNuiFocus(false, false);
             _enabled = 1;
         }
 

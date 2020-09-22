@@ -1,28 +1,22 @@
-﻿using CitizenFX.Core.Native;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ELS
 {
     class Utils
     {
+        public static bool IsDeveloper = false;
+        public static bool Debug = false;
         /// <summary>
         /// Print out a message only if the program is compiled for Debug.
         /// </summary>
         /// <param name="data">Data to print in console</param>
         static internal void DebugWrite(string data)
         {
-#if DEBUG
-            if (bool.Parse(API.GetConvar("elsplus_debug","false")))
+            if (IsDeveloper)
             {
                 CitizenFX.Core.Debug.Write($"ELS-Plus: {data}");
             }
-#endif
-
         }
 
         /// <summary>
@@ -32,8 +26,7 @@ namespace ELS
         /// /// <param name="args">Arugments to be formated into data</param>
         static internal void DebugWriteLine(string data, [Optional]object[] args)
         {
-#if DEBUG
-            if (bool.Parse(API.GetConvar("elsplus_debug", "false")))
+            if (IsDeveloper)
             {
                 if (args != null)
                 {
@@ -44,7 +37,6 @@ namespace ELS
                     CitizenFX.Core.Debug.WriteLine($"ELS-Plus: {data}");
                 }
             }
-#endif
         }
         /// <summary>
         /// Print out a message only if the program is compiled for all release types.
@@ -72,6 +64,22 @@ namespace ELS
             }
         }
 
+        static internal void DeveloperWriteLine(string data, [Optional]object[] args)
+        {
+            if (!IsDeveloper)
+            {
+                return;
+            }
+            if (args != null)
+            {
+                CitizenFX.Core.Debug.WriteLine($"ELS-Plus: {data}", args);
+            }
+            else
+            {
+                CitizenFX.Core.Debug.WriteLine($"ELS-Plus: {data}");
+            }
+        }
+
         /// <summary>
         /// Print out a message only if the program is compiled for all release types.
         /// </summary>
@@ -83,5 +91,38 @@ namespace ELS
             throw (ex);
         }
 
+    }
+
+    class Timer
+    {
+        int _limit = 0;
+
+        public int Limit { set { _limit = CitizenFX.Core.Game.GameTime + value; } }
+        public bool Expired
+        {
+            get
+            {
+
+                if (CitizenFX.Core.Game.GameTime > _limit)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+            }
+        }
+
+        public Timer()
+        {
+
+        }
+
+        public void Reset()
+        {
+            _limit = 0;
+        }
     }
 }

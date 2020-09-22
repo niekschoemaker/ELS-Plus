@@ -1,14 +1,7 @@
-﻿using CitizenFX.Core;
-using CitizenFX.Core.Native;
-using CitizenFX.Core.UI;
-using ELS.Light.Patterns;
-using ELS.NUI;
+﻿using ELS.NUI;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 
 namespace ELS.Light
@@ -21,16 +14,16 @@ namespace ELS.Light
         internal void ToggleSecLights()
         {
             //foreach (Extra.Extra ex in _extras.SECL.Values)
-            for (int i = 0; i < _extras.SECL.Count; i++)
+            for (int i = 0; i < _extras.SecondaryLights.Count; i++)
             {
-                if (_extras.SECL.ElementAt(i).Value.IsPatternRunning)
+                if (_extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning)
                 {
-                    _extras.SECL.ElementAt(i).Value.IsPatternRunning = false;
-                    _extras.SECL.ElementAt(i).Value.CleanUp();
+                    _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
+                    _extras.SecondaryLights.ElementAt(i).Value.CleanUp();
                 }
                 else
                 {
-                    _extras.SECL.ElementAt(i).Value.IsPatternRunning = true;
+                    _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = true;
                 }
             }
             secLights = !secLights;
@@ -42,16 +35,16 @@ namespace ELS.Light
         internal void ToggleWrnLights()
         {
             //foreach (Extra.Extra ex in _extras.WRNL.Values)
-            for (int i = 0; i < _extras.WRNL.Count; i++)
+            for (int i = 0; i < _extras.WarningLights.Count; i++)
             {
-                if (_extras.WRNL.ElementAt(i).Value.IsPatternRunning)
+                if (_extras.WarningLights.ElementAt(i).Value.IsPatternRunning)
                 {
-                    _extras.WRNL.ElementAt(i).Value.IsPatternRunning = false;
-                    _extras.WRNL.ElementAt(i).Value.CleanUp();
+                    _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
+                    _extras.WarningLights.ElementAt(i).Value.CleanUp();
                 }
                 else
                 {
-                    _extras.WRNL.ElementAt(i).Value.IsPatternRunning = true;
+                    _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = true;
                 }
             }
             wrnLights = !wrnLights;
@@ -62,19 +55,19 @@ namespace ELS.Light
         bool crsLights = false;
         internal async void ToggleCrs()
         {
-            if (_vcfroot.CRUISE.DisableAtLstg3 && _stage.CurrentStage == 3)
+            if (Vcfroot.CRUISE.DisableAtLstg3 && _stage.CurrentStage == 3)
             {
-                foreach (Extra.Extra e in _extras.PRML.Values)
+                foreach (Extra.Extra e in _extras.PrimaryLights.Values)
                 {
                     e.TurnedOn = false;
                 }
             }
-            foreach (Extra.Extra e in _extras.PRML.Values)
+            foreach (Extra.Extra e in _extras.PrimaryLights.Values)
             {
                 switch (e.Id)
                 {
                     case 1:
-                        if (_vcfroot.CRUISE.UseExtras.Extra1)
+                        if (Vcfroot.CRUISE.UseExtras.Extra1)
                         {
                             e.TurnedOn = !e.TurnedOn;
                         }
@@ -84,7 +77,7 @@ namespace ELS.Light
                         }
                         break;
                     case 2:
-                        if (_vcfroot.CRUISE.UseExtras.Extra2)
+                        if (Vcfroot.CRUISE.UseExtras.Extra2)
                         {
                             e.TurnedOn = !e.TurnedOn;
                         }
@@ -94,7 +87,7 @@ namespace ELS.Light
                         }
                         break;
                     case 3:
-                        if (_vcfroot.CRUISE.UseExtras.Extra3)
+                        if (Vcfroot.CRUISE.UseExtras.Extra3)
                         {
                             e.TurnedOn = !e.TurnedOn;
                         }
@@ -104,7 +97,7 @@ namespace ELS.Light
                         }
                         break;
                     case 4:
-                        if (_vcfroot.CRUISE.UseExtras.Extra4)
+                        if (Vcfroot.CRUISE.UseExtras.Extra4)
                         {
                             e.TurnedOn = !e.TurnedOn;
                         }
@@ -122,29 +115,29 @@ namespace ELS.Light
 
         internal void ToggleTdl()
         {
-            if (_extras.TDL != null)
+            if (_extras.TakedownLights != null)
             {
-                _extras.TDL.TurnedOn = !_extras.TDL.State;
+                _extras.TakedownLights.TurnedOn = !_extras.TakedownLights.State;
             }
-            else if (spotLight != null)
+            else if (SpotLight != null)
             {
-                spotLight.TurnedOn = !spotLight.TurnedOn;
+                SpotLight.TurnedOn = !SpotLight.TurnedOn;
             }
-            ElsUiPanel.ToggleUiBtnState(spotLight.TurnedOn, "TDL");
+            ElsUiPanel.ToggleUiBtnState(SpotLight.TurnedOn, "TDL");
             ElsUiPanel.PlayUiSound("sirenclickoff");
         }
 
         internal void ToggleScl()
         {
-            if (_extras.SCL != null)
+            if (_extras.SceneLights != null)
             {
-                _extras.SCL.TurnedOn = !_extras.SCL.State;
+                _extras.SceneLights.TurnedOn = !_extras.SceneLights.State;
             }
-            else if (scene != null)
+            else if (Scene != null)
             {
-                scene.TurnedOn = !scene.TurnedOn;
+                Scene.TurnedOn = !Scene.TurnedOn;
             }
-            ElsUiPanel.ToggleUiBtnState(scene.TurnedOn, "SCL");
+            ElsUiPanel.ToggleUiBtnState(Scene.TurnedOn, "SCL");
             ElsUiPanel.PlayUiSound("sirenclickoff");
         }
 
@@ -456,18 +449,12 @@ namespace ELS.Light
         internal async void ToggleLightStage()
         {
             await _stage.NextStage(false);
-#if DEBUG
-            Utils.DebugWriteLine($"Current Lightstage is {_stage.CurrentStage}");
-#endif
             SetStage();
         }
 
         internal async void ToggleLightStageInverse()
         {
             await _stage.NextStage(true);
-#if DEBUG
-            Utils.DebugWriteLine($"Current Inverse Lightstage is {_stage.CurrentStage}");
-#endif
             SetStage();
         }
 
@@ -480,27 +467,27 @@ namespace ELS.Light
                     SetGTASirens(false);
                     ElsUiPanel.ToggleUiBtnState(false, "WW");
                     //foreach (Extra.Extra e in _extras.PRML.Values)
-                    for (int i = 0; i < _extras.PRML.Count; i++)
+                    for (int i = 0; i < _extras.PrimaryLights.Count; i++)
                     {
-                        _extras.PRML.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
                     //foreach (Extra.Extra e in _extras.SECL.Values)
-                    for (int i = 0; i < _extras.SECL.Count; i++)
+                    for (int i = 0; i < _extras.SecondaryLights.Count; i++)
                     {
-                        _extras.SECL.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
                     //foreach (Extra.Extra e in _extras.WRNL.Values)
-                    for (int i = 0; i < _extras.WRNL.Count; i++)
+                    for (int i = 0; i < _extras.WarningLights.Count; i++)
                     {
-                        _extras.WRNL.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
-                    if (_vcfroot.SECL.LightingFormat.ToLower().Equals("chp"))
+                    if (Vcfroot.SECL.LightingFormat.ToLower().Equals("chp"))
                     {
-                        _extras.SBRN.SetState(false);
+                        _extras.SteadyBurn.SetState(false);
                     }
-                    if (_vcfroot.MISC.UseSteadyBurnLights && _extras.SBRN != null)
+                    if (Vcfroot.MISC.UseSteadyBurnLights && _extras.SteadyBurn != null)
                     {
-                        _extras.SBRN.SetState(false);
+                        _extras.SteadyBurn.SetState(false);
                     }
                     prmLights = false;
                     secLights = false;
@@ -511,13 +498,13 @@ namespace ELS.Light
                     ElsUiPanel.PlayUiSound("sirenclick");
                     break;
                 case 1:
-                    if (_vcfroot.MISC.DfltSirenLtsActivateAtLstg == 1)
+                    if (Vcfroot.MISC.DfltSirenLtsActivateAtLstg == 1)
                     {
                         SetGTASirens(true);
                         ElsUiPanel.ToggleUiBtnState(true, "WW");
                     }
                     //foreach (Extra.Extra e in _extras.SECL.Values)
-                    for (int i = 0; i < _extras.SECL.Count; i++)
+                    for (int i = 0; i < _extras.SecondaryLights.Count; i++)
                     {
                         if (_stage.SECL.PresetPatterns.Lstg1.Enabled)
                         {
@@ -534,28 +521,28 @@ namespace ELS.Light
                         {
 
                         }
-                        _extras.SECL.ElementAt(i).Value.IsPatternRunning = true;
+                        _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = true;
                     }
-                    if (_vcfroot.SECL.LightingFormat.ToLower().Equals("chp"))
+                    if (Vcfroot.SECL.LightingFormat.ToLower().Equals("chp"))
                     {
                         SetCHP();
                         //_extras.SBRN.Pattern = CHP.LightStage1[10];
                         //_extras.SBRN.IsPatternRunning = true;
-                        _extras.SBRN.SetState(true);
+                        _extras.SteadyBurn.SetState(true);
                     }
                     //foreach (Extra.Extra e in _extras.PRML.Values)
-                    for (int i = 0; i < _extras.PRML.Count; i++)
+                    for (int i = 0; i < _extras.PrimaryLights.Count; i++)
                     {
-                        _extras.PRML.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
                     //foreach (Extra.Extra e in _extras.WRNL.Values)
-                    for (int i = 0; i < _extras.WRNL.Count; i++)
+                    for (int i = 0; i < _extras.WarningLights.Count; i++)
                     {
-                        _extras.WRNL.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
-                    if (_vcfroot.MISC.UseSteadyBurnLights && _extras.SBRN != null)
+                    if (Vcfroot.MISC.UseSteadyBurnLights && _extras.SteadyBurn != null)
                     {
-                        _extras.SBRN.SetState(true);
+                        _extras.SteadyBurn.SetState(true);
                     }
                     prmLights = false;
                     secLights = true;
@@ -566,23 +553,23 @@ namespace ELS.Light
                     ElsUiPanel.PlayUiSound("sirenclick");
                     break;
                 case 2:
-                    if (_vcfroot.MISC.DfltSirenLtsActivateAtLstg == 2)
+                    if (Vcfroot.MISC.DfltSirenLtsActivateAtLstg == 2)
                     {
                         SetGTASirens(true);
                         ElsUiPanel.ToggleUiBtnState(true, "WW");
                     }
                     //foreach (Extra.Extra e in _extras.PRML.Values)
-                    for (int i = 0; i < _extras.PRML.Count; i++)
+                    for (int i = 0; i < _extras.PrimaryLights.Count; i++)
                     {
-                        _extras.PRML.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
                     //foreach (Extra.Extra e in _extras.WRNL.Values)
-                    for (int i = 0; i < _extras.WRNL.Count; i++)
+                    for (int i = 0; i < _extras.WarningLights.Count; i++)
                     {
-                        _extras.WRNL.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
                     }
                     //foreach (Extra.Extra e in _extras.SECL.Values)
-                    for (int i = 0; i < _extras.SECL.Count; i++)
+                    for (int i = 0; i < _extras.SecondaryLights.Count; i++)
                     {
                         if (_stage.SECL.PresetPatterns.Lstg2.Enabled)
                         {
@@ -598,14 +585,14 @@ namespace ELS.Light
                         else
                         {
                         }
-                        _extras.SECL.ElementAt(i).Value.IsPatternRunning = false;
-                        _extras.SECL.ElementAt(i).Value.IsPatternRunning = true;
+                        _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
+                        _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = true;
                     }
                     secLights = true;
                     //foreach (int i in extras)
                     for(int i = 0; i < extras.Length; i++) 
                     {
-                        if (_extras.PRML.ContainsKey(extras[i]))
+                        if (_extras.PrimaryLights.ContainsKey(extras[i]))
                         {
                             if (_stage.PRML.PresetPatterns.Lstg2.Enabled)
                             {
@@ -624,20 +611,20 @@ namespace ELS.Light
                             }
                             //_extras.PRML.ElementAt(i).Value.IsPatternRunning = false;
                             //_extras.PRML.ElementAt(i).Value.IsPatternRunning = true;
-                            _extras.PRML[extras[i]].IsPatternRunning = false;
-                            _extras.PRML[extras[i]].IsPatternRunning = true;
+                            _extras.PrimaryLights[extras[i]].IsPatternRunning = false;
+                            _extras.PrimaryLights[extras[i]].IsPatternRunning = true;
                         }
                     }
-                    if (_vcfroot.PRML.LightingFormat.ToLower().Equals("chp"))
+                    if (Vcfroot.PRML.LightingFormat.ToLower().Equals("chp"))
                     {
                         SetCHP();
                         //_extras.SBRN.Pattern = CHP.LightStage2[CurrentSecPattern][10];
                         //_extras.SBRN.IsPatternRunning = true;
-                        _extras.SBRN.SetState(true);
+                        _extras.SteadyBurn.SetState(true);
                     }
-                    if (_vcfroot.MISC.UseSteadyBurnLights && _extras.SBRN != null)
+                    if (Vcfroot.MISC.UseSteadyBurnLights && _extras.SteadyBurn != null)
                     {
-                        _extras.SBRN.SetState(true);
+                        _extras.SteadyBurn.SetState(true);
                     }
                     prmLights = true;
                     secLights = true;
@@ -648,13 +635,13 @@ namespace ELS.Light
                     ElsUiPanel.PlayUiSound("sirenclick");
                     break;
                 case 3:
-                    if (_vcfroot.MISC.DfltSirenLtsActivateAtLstg == 3)
+                    if (Vcfroot.MISC.DfltSirenLtsActivateAtLstg == 3)
                     {
                         SetGTASirens(true);
                         ElsUiPanel.ToggleUiBtnState(true, "WW");
                     }
                     //foreach (Extra.Extra e in _extras.SECL.Values)
-                    for (int i = 0; i < _extras.SECL.Count; i++)
+                    for (int i = 0; i < _extras.SecondaryLights.Count; i++)
                     {
 
                         if (_stage.SECL.PresetPatterns.Lstg3.Enabled)
@@ -668,22 +655,22 @@ namespace ELS.Light
                                 CurrentSecPattern = _stage.SECL.PresetPatterns.Lstg3.IntPattern;
                             }
                         }
-                        if (_vcfroot.SECL.DisableAtLstg3)
+                        if (Vcfroot.SECL.DisableAtLstg3)
                         {
-                            _extras.SECL.ElementAt(i).Value.IsPatternRunning = false;
+                            _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
                             secLights = false;
                             ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
                         }
                         else
                         {
-                            _extras.SECL.ElementAt(i).Value.IsPatternRunning = false;
-                            _extras.SECL.ElementAt(i).Value.IsPatternRunning = true;
+                            _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
+                            _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = true;
                             secLights = true;
                             ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
                         }
                     }
                     //foreach (Extra.Extra e in _extras.PRML.Values)
-                    for (int i = 0; i < _extras.PRML.Count; i++)
+                    for (int i = 0; i < _extras.PrimaryLights.Count; i++)
                     {
                         if (_stage.PRML.PresetPatterns.Lstg3.Enabled)
                         {
@@ -696,22 +683,22 @@ namespace ELS.Light
                                 CurrentPrmPattern = _stage.PRML.PresetPatterns.Lstg3.IntPattern;
                             }
                         }
-                        if (_vcfroot.PRML.DisableAtLstg3)
+                        if (Vcfroot.PRML.DisableAtLstg3)
                         {
-                            _extras.PRML.ElementAt(i).Value.IsPatternRunning = false;
+                            _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
                             prmLights = false;
                             ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
                         }
                         else
                         {
-                            _extras.PRML.ElementAt(i).Value.IsPatternRunning = false;
-                            _extras.PRML.ElementAt(i).Value.IsPatternRunning = true;
+                            _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
+                            _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = true;
                             prmLights = true;
                             ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
                         }
                     }
                     //foreach (Extra.Extra e in _extras.WRNL.Values)
-                    for (int i = 0; i < _extras.WRNL.Count; i++)
+                    for (int i = 0; i < _extras.WarningLights.Count; i++)
                     {
                         if (_stage.WRNL.PresetPatterns.Lstg3.Enabled)
                         {
@@ -724,30 +711,30 @@ namespace ELS.Light
                                 CurrentWrnPattern = _stage.WRNL.PresetPatterns.Lstg3.IntPattern;
                             }
                         }
-                        if (_vcfroot.WRNL.DisableAtLstg3)
+                        if (Vcfroot.WRNL.DisableAtLstg3)
                         {
-                            _extras.WRNL.ElementAt(i).Value.IsPatternRunning = false;
+                            _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
                             wrnLights = false;
                             ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
                         }
                         else
                         {
-                            _extras.WRNL.ElementAt(i).Value.IsPatternRunning = false;
-                            _extras.WRNL.ElementAt(i).Value.IsPatternRunning = true;
+                            _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
+                            _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = true;
                             wrnLights = true;
                             ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
                         }
                     }
-                    if (_vcfroot.PRML.LightingFormat.ToLower().Equals("chp"))
+                    if (Vcfroot.PRML.LightingFormat.ToLower().Equals("chp"))
                     {
                         SetCHP();
                         //_extras.SBRN.Pattern = CHP.LightStage3[CurrentWrnPattern][10];
                         //_extras.SBRN.IsPatternRunning = true;
-                        _extras.SBRN.SetState(true);
+                        _extras.SteadyBurn.SetState(true);
                     }
-                    if (_vcfroot.MISC.UseSteadyBurnLights && _extras.SBRN != null)
+                    if (Vcfroot.MISC.UseSteadyBurnLights && _extras.SteadyBurn != null)
                     {
-                        _extras.SBRN.SetState(true);
+                        _extras.SteadyBurn.SetState(true);
                     }
                     ElsUiPanel.PlayUiSound("sirenclick");
                     break;

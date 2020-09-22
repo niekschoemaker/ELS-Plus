@@ -1,16 +1,14 @@
 ﻿
+using CitizenFX.Core;
+using CitizenFX.Core.Native;
+using ELS.Light;
+using ELSShared;
+using Newtonsoft.Json;
+using Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using CitizenFX.Core;
-using CitizenFX.Core.Native;
-using CitizenFX.Core.UI;
-using System.Drawing;
-using System.Collections;
 using System.Threading.Tasks;
-using ELS.configuration;
-using ELS.Light;
 using static ELS.RemoteEventManager;
 
 namespace ELS.Manager
@@ -18,37 +16,36 @@ namespace ELS.Manager
     class VehicleManager
     {
         internal static VehicleList vehicleList;
+        internal static bool WasPaused = false;
         static bool notified = false;
         public VehicleManager()
         {
             vehicleList = new VehicleList();
         }
 
-        internal static void makenetworked(Vehicle veh)
+        internal static void MakeNetworked(Vehicle veh)
         {
             //////////
             ///
             ///  THANKS to Antivirus-chan in the FiveM community for supplying this code
             ///
             //////////
-            //if (!veh.Model.IsLoaded) veh.Model.Request(-1);
-            var net1 = API.VehToNet(veh.Handle);
             var attempts = 0;
+            var netId = API.VehToNet(veh.Handle);
             do
             {
-#if DEBUG
-                Utils.DebugWriteLine($"Attempt {attempts} of {veh.Handle} driven by {veh.GetPedOnSeat(VehicleSeat.Driver).Handle}");
-#endif
                 //BaseScript.Delay(500);
-                var netid = API.NetworkGetNetworkIdFromEntity(veh.Handle);
                 API.NetworkRegisterEntityAsNetworked(veh.Handle);
                 API.SetEntityAsMissionEntity(veh.Handle, false, false);
-                API.SetNetworkIdCanMigrate(netid, true);
-                API.SetNetworkIdExistsOnAllMachines(netid, true);
+                if (veh.IsNetworked())
+                {
+                    API.SetNetworkIdCanMigrate(netId, true);
+                    API.SetNetworkIdExistsOnAllMachines(netId, true);
+                }
                 API.NetworkRequestControlOfEntity(veh.Handle);
                 attempts++;
             }
-            while (!API.NetworkDoesEntityExistWithNetworkId(veh.Handle) && attempts < 20);
+            while (!veh.IsNetworked() && attempts < 20);
             if (attempts == 20 && !notified)
             {
                 CitizenFX.Core.Debug.WriteLine("Failed to register entity on net");
@@ -56,133 +53,140 @@ namespace ELS.Manager
             }
             else if (!notified)
             {
-                CitizenFX.Core.Debug.WriteLine($"Registered {veh.Handle} on net as {net1}");
-                ELS.TriggerEvent("ELS:VehicleEntered");
+                Debug.WriteLine($"Registered {veh.Handle} on net as {veh.NetworkId}");
+                BaseScript.TriggerEvent("ELS:VehicleEntered");
                 notified = true;
             }
         }
-        internal async void RunTickAsync()
+        internal void RunTick()
         {
             try
             {
-                if (Game.PlayerPed.IsSittingInELSVehicle() &&
-                        (Game.PlayerPed.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == Game.PlayerPed
-                        || Game.PlayerPed.CurrentVehicle.GetPedOnSeat(VehicleSeat.Passenger) == Game.PlayerPed))
+                // If in ELS vehicle
+                if (ELS.ped.IsSittingInELSVehicle() && ELS.ped.IsSittingInDriverOrPassengerSeat(ELS.CurrentVehicle))
                 {
-                    if (vehicleList.ContainsKey(Game.PlayerPed.CurrentVehicle.GetNetworkId()))
+                    API.SetVehicleDeformationFixed(ELS.CurrentVehicle.Handle);
+                    var netId = ELS.CurrentVehicle.NetworkId;
+                    if (API.NetworkDoesNetworkIdExist(netId))
                     {
-                        //Utils.DebugWriteLine("Vehicle is in the list running ticks");
-                        ELSVehicle _currentVehicle = vehicleList[Game.PlayerPed.CurrentVehicle.GetNetworkId()];
-                        _currentVehicle?.RunControlTick();
-                        //vehicleList.RunExternalTick(_currentVehicle);
-                        Game.PlayerPed.CurrentVehicle.SetExistOnAllMachines(true);
-                    }
-                    else
-                    {
-                        if (!vehicleList.VehRegAttempts.ContainsKey(Game.PlayerPed.CurrentVehicle.GetNetworkId()) || Game.GameTime - vehicleList.VehRegAttempts[Game.PlayerPed.CurrentVehicle.GetNetworkId()].Item2 >= 15000 && vehicleList.VehRegAttempts[Game.PlayerPed.CurrentVehicle.GetNetworkId()].Item1 < 5)
+                        if (vehicleList.ContainsKey(netId))
                         {
-                            if (vehicleList.MakeSureItExists(API.VehToNet(Game.PlayerPed.CurrentVehicle.Handle), vehicle: out ELSVehicle _currentVehicle))
+                            ELSVehicle _currentVehicle = vehicleList[netId];
+                            _currentVehicle?.RunControlTick();
+                            ELS.CurrentVehicle.SetExistOnAllMachines(true);
+                        }
+                        else
+                        {
+                            if (!vehicleList.VehRegAttempts.ContainsKey(netId) || Game.GameTime - vehicleList.VehRegAttempts[netId].Item2 >= 15000 && vehicleList.VehRegAttempts[netId].Item1 < 5)
                             {
-                                _currentVehicle?.RunControlTick();
-                                // vehicleList.RunExternalTick(_currentVehicle);
-                                Game.PlayerPed.CurrentVehicle.SetExistOnAllMachines(true);
+                                if (ELS.CurrentVehicle.IsNetworked() && vehicleList.MakeSureItExists(netId, vehicle: out ELSVehicle _currentVehicle))
+                                {
+                                    _currentVehicle?.RunControlTick();
+                                    ELS.CurrentVehicle.SetExistOnAllMachines(true);
+                                }
                             }
                         }
                     }
-                    vehicleList.RunTick();
-                    Indicator.RunAsync(Game.PlayerPed.CurrentVehicle);
-#if DEBUG
-                    //if (Game.IsControlJustPressed(0, Control.Cover))
-                    //{
-                    //    FullSync.FullSyncManager.SendDataBroadcast(
-                    //        _currentVehicle.GetData(),
-                    //        Game.Player.ServerId
-                    //    );
-                    //    CitizenFX.Core.UI.Screen.ShowNotification("FullSync™ ran");
-                    //    CitizenFX.Core.Debug.WriteLine("FullSync™ ran");
-                    //}
-                    //Debug.DebugText();
-#endif
                 }
-                //else if (Game.PlayerPed.IsInVehicle() && (Game.PlayerPed.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == Game.PlayerPed)
-                //    && (VehicleClass.Boats != Game.PlayerPed.CurrentVehicle.ClassType || VehicleClass.Trains != Game.PlayerPed.CurrentVehicle.ClassType
-                //    || VehicleClass.Planes != Game.PlayerPed.CurrentVehicle.ClassType || VehicleClass.Helicopters != Game.PlayerPed.CurrentVehicle.ClassType))
-                //{
-                //    if (Game.PlayerPed.CurrentVehicle.GetNetworkId() == 0)
-                //    {
-                //        makenetworked(Game.PlayerPed.CurrentVehicle);
-                //    }
-                //    Indicator.RunAsync(Game.PlayerPed.CurrentVehicle);
-                //    vehicleList.RunTick();
-                //}
-                else
+                if (ELS.CurrentVehicle != null)
                 {
-                    vehicleList.RunTick();
-                    vehicleList.RunExternalTick();
+                    var isPaused = Game.IsPaused;
+                    if (isPaused)
+                    {
+                        if (!Indicator.IsHazardLightActive)
+                        {
+                            WasPaused = true;
+                            Indicator.SetHazards(true);
+                        }
+                    }
+                    else if (WasPaused && Indicator.IsHazardLightActive)
+                    {
+                        WasPaused = false;
+                        Indicator.SetHazards(false);
+                    }
                 }
+                vehicleList.RunTick();
             }
             catch (Exception e)
             {
-                CitizenFX.Core.Debug.WriteLine($"VehicleManager Error: {e.Message} \n Stacktrace: {e.StackTrace}");
+                Debug.WriteLine($"VehicleManager Error: {e.Message} \n Stacktrace: {e.StackTrace}");
+            }
+        }
+
+        public void SetVehicleLightData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
+        {
+            if (Game.Player.ServerId == PlayerId)
+            {
+                return;
             }
 
-            //TODO Chnage how I check for the panic alarm
+            if (vehicleList.TryGetValue(NetworkId, out var vehicle))
+            {
+                vehicle.SetLightData(dataDic);
+            }
+            else
+            {
+                Utils.ReleaseWriteLine($"Vehicle with key {NetworkId} not found");
+                BaseScript.TriggerServerEvent(EventNames.FullSyncRequestOne, NetworkId);
+            }
+        }
+
+        public void SetVehicleSirenData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
+        {
+            if (Game.Player.ServerId == PlayerId)
+            {
+                return;
+            }
+            
+            if (vehicleList.TryGetValue(NetworkId, out var vehicle))
+            {
+                vehicle.SetSirenData(dataDic);
+            }
+            else
+            {
+                Utils.ReleaseWriteLine($"Vehicle with key {NetworkId} not found");
+                BaseScript.TriggerServerEvent(EventNames.FullSyncRequestOne, NetworkId);
+            }
         }
 
         /// <summary>
         /// Proxies the sync data to a certain vehicle
         /// </summary>
         /// <param name="dataDic">data</param>
-        async internal void SetVehicleSyncData(IDictionary<string, object> dataDic, int PlayerId)
+        public void SetVehicleSyncData(IDictionary<string, object> dataDic, int networkId, int PlayerId)
         {
             if (Game.Player.ServerId == PlayerId)
             {
-#if DEBUG
-                Utils.DebugWriteLine("We are player exiting set sync data");
-#endif
+                Utils.DebugWriteLine("Data discarded because PlayerId same as local player ID");
                 return;
             }
 
-#if DEBUG
             Utils.DebugWriteLine($"{PlayerId} has sent us data parsing");
-#endif
-            int netid = int.Parse(dataDic["NetworkID"].ToString());
-            if (vehicleList.ContainsKey(netid) && dataDic.ContainsKey("siren") || dataDic.ContainsKey("lights"))
+
+            var hasSirenOrLightData = dataDic.ContainsKey(DataNames.Siren) || dataDic.ContainsKey(DataNames.Light);
+            if (vehicleList.ContainsKey(networkId) && hasSirenOrLightData)
             {
-                vehicleList[netid].SetData(dataDic);
-#if DEBUG
-                Utils.DebugWriteLine($" Applying vehicle data with NETID of {netid} LOCALID of {API.NetToVeh(netid)}");
-#endif
+                vehicleList[networkId].SetData(dataDic);
                 return;
             }
-            if (!vehicleList.VehRegAttempts.ContainsKey(netid) || Game.GameTime - vehicleList.VehRegAttempts[netid].Item2 >= 15000 && vehicleList.VehRegAttempts[netid].Item1 < 5)
+            if (hasSirenOrLightData && (!vehicleList.VehRegAttempts.ContainsKey(networkId) || (Game.GameTime - vehicleList.VehRegAttempts[networkId].Item2 >= 15000 && vehicleList.VehRegAttempts[networkId].Item1 < 5)))
             {
-                if (!vehicleList.MakeSureItExists(netid, dataDic, out ELSVehicle veh1, PlayerId))
+                if (!vehicleList.MakeSureItExists(networkId, dataDic, out ELSVehicle veh1, PlayerId))
                 {
-#if DEBUG
-                    Utils.DebugWriteLine("Failed to register other clients vehicle");
-#endif
-
+                    Utils.ReleaseWriteLine($"Failed to register other clients vehicle with id {networkId}");
                     return;
                 }
-                //veh1.SetData(dataDic);
-            }
-            else
-            {
-#if DEBUG
-                Utils.DebugWriteLine("Attempting to register be patient");
-#endif
             }
 
-            if (dataDic.ContainsKey("IndState") && !dataDic.ContainsKey("siren") && !dataDic.ContainsKey("lights"))
+            if (dataDic.ContainsKey(DataNames.IndicatorState) && !hasSirenOrLightData && API.NetworkDoesNetworkIdExist(networkId))
             {
-#if DEBUG
-                Utils.DebugWriteLine($"Ind sync data for {netid} is {dataDic["IndState"]}");
-#endif
-                Vehicle veh = (Vehicle)Vehicle.FromHandle(API.NetworkGetEntityFromNetworkId(netid));
-                if (veh != null)
+                if(API.NetworkDoesNetworkIdExist(networkId))
                 {
-                    Indicator.ToggleInicatorState(veh, Indicator.IndStateLib[dataDic["IndState"].ToString()]);
+                    Vehicle veh = (Vehicle)Entity.FromHandle(API.NetworkGetEntityFromNetworkId(networkId));
+                    if (veh != null)
+                    {
+                        Indicator.ToggleInicatorState(veh, Indicator.IndStateLib[dataDic[DataNames.IndicatorState].ToString()]);
+                    }
                 }
             }
         }
@@ -199,13 +203,10 @@ namespace ELS.Manager
             vehicleList[netId].SyncUi();
         }
 
-        internal static void SyncRequestReply(Commands command, int NetworkId, int PlayerId)
+        internal static void SyncRequestReply(Commands command, int NetworkId)
         {
-            if (NetworkId == 0)
+            if (NetworkId == 0 || !API.NetworkDoesNetworkIdExist(NetworkId))
             {
-#if DEBUG
-                Utils.DebugWriteLine("ERROR sending vehicle data NetwordID equals 0\n");
-#endif
                 return;
             }
             switch (command)
@@ -213,20 +214,18 @@ namespace ELS.Manager
                 case Commands.ToggleInd:
                     Dictionary<string, object> dict = new Dictionary<string, object>
                     {
-                        {"NetworkID",NetworkId },
-                        {"IndState", Indicator.CurrentIndicatorState((Vehicle)Vehicle.FromHandle(API.NetworkGetEntityFromNetworkId(NetworkId))).ToString() }
+                        {DataNames.IndicatorState, Indicator.CurrentIndicatorState((Vehicle)Vehicle.FromHandle(API.NetworkGetEntityFromNetworkId(NetworkId))).ToString() }
                     };
-#if DEBUG
-                    Utils.DebugWriteLine($"Sending sync data for {dict["NetworkID"]} is {dict["IndState"]}");
-#endif
-                    FullSync.FullSyncManager.SendDataBroadcast(dict, PlayerId);
+                    FullSync.FullSyncManager.SendDataBroadcast(dict, NetworkId);
                     break;
                 default:
-                    FullSync.FullSyncManager.SendDataBroadcast(vehicleList[NetworkId].GetData(), PlayerId);
+                    var data = vehicleList[NetworkId].GetData();
+                    FullSync.FullSyncManager.SendDataBroadcast(data, NetworkId);
                     break;
 
             }
         }
+
         internal void SyncAllVehiclesOnFirstSpawn(System.Dynamic.ExpandoObject data)
         {
             //dynamic k = data;
@@ -235,23 +234,10 @@ namespace ELS.Manager
             {
                 int netID = int.Parse(struct1.Key);
                 var vehData = (IDictionary<string, object>)struct1.Value;
-                int vehId = int.Parse(vehData["NetworkID"].ToString());
-                vehicleList.MakeSureItExists(vehId,
-                        vehData,
-                        out ELSVehicle veh
-                );
+                vehicleList.MakeSureItExists(netID, vehData, out ELSVehicle _);
             }
         }
 
-        void GetAllVehicles()
-        {
-
-        }
-
-        void RemoveStallVehicles()
-        {
-
-        }
         internal void CleanUP()
         {
             vehicleList.CleanUP();

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using CitizenFX.Core.Native;
+﻿using CitizenFX.Core.Native;
 using ELS.NUI;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace ELS.configuration
 {
@@ -56,11 +52,8 @@ namespace ELS.configuration
         {
             string vehs = API.GetResourceKvpString("elsplus_savedvehicles");
             string uiSet = API.GetResourceKvpString("elsplus_uisettings");
-#if DEBUG
-            Utils.DebugWriteLine($"UserSettings: got ui settings as: {uiSet}");
-            Utils.DebugWriteLine($"UserSettings: got vehicle settings as: {vehs}");
-#endif
-            if (!String.IsNullOrEmpty(vehs))
+
+            if (!string.IsNullOrEmpty(vehs))
             {
                 JArray vehArray = JArray.Parse(vehs);
                 foreach (JToken obj in vehArray)
@@ -77,7 +70,7 @@ namespace ELS.configuration
                 }
 
             }
-            if (!String.IsNullOrEmpty(uiSet))
+            if (!string.IsNullOrEmpty(uiSet))
             {
                 JObject ui = JObject.Parse(uiSet);
                 uiSettings.currentUI = ELSUiDic[(string)ui["currentUI"]];
@@ -102,22 +95,18 @@ namespace ELS.configuration
             JArray vehArray = new JArray();
             foreach (ELSUserVehicle vehicle in savedVehicles)
             {
-                JObject obj = new JObject();
-                obj.Add("Model", vehicle.Model);
-                obj.Add("ServerId", vehicle.ServerId);
-                obj.Add("PrmPatt", vehicle.PrmPatt);
-                obj.Add("SecPatt", vehicle.SecPatt);
-                obj.Add("WrnPatt", vehicle.WrnPatt);
-                obj.Add("Siren", vehicle.Siren);
+                JObject obj = new JObject
+                {
+                    { "Model", vehicle.Model },
+                    { "ServerId", vehicle.ServerId },
+                    { "PrmPatt", vehicle.PrmPatt },
+                    { "SecPatt", vehicle.SecPatt },
+                    { "WrnPatt", vehicle.WrnPatt },
+                    { "Siren", vehicle.Siren }
+                };
                 vehArray.Add(obj);
             }
-#if DEBUG
-            Utils.DebugWriteLine($"UserSettings: vehicles json: {vehArray}");
-#endif
             API.SetResourceKvp("elsplus_savedvehicles", vehArray.ToString());
-#if DEBUG
-            Utils.DebugWriteLine($"UserSettings: Vehicle Settings Saved: {API.GetResourceKvpString("elsplus_savedvehicles")}");
-#endif
         }
 
         internal async void SaveUI(bool reload)
@@ -126,13 +115,8 @@ namespace ELS.configuration
             obj.Add("currentUI", uiSettings.currentUI.ToString());
             obj.Add("enabled", uiSettings.enabled);
             //string uiSet = JsonConvert.SerializeObject(uiSettings);
-#if DEBUG
-            Utils.DebugWriteLine($"UserSettings: ui json: {obj}");
-#endif
             API.SetResourceKvp("elsplus_uisettings", obj.ToString());
-#if DEBUG
-            Utils.DebugWriteLine($"UserSettings: Ui Settings Saved: {API.GetResourceKvpString("elsplus_uisettings")}");
-#endif
+
             if (reload)
             {
                 ElsUiPanel.ReloadUI();

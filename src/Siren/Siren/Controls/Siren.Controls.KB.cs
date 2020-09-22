@@ -1,7 +1,6 @@
-﻿using System;
-using CitizenFX.Core;
+﻿using CitizenFX.Core;
 using ELS.configuration;
-using ELS.TrafficControl;
+using System;
 
 namespace ELS.Siren
 {
@@ -16,7 +15,7 @@ namespace ELS.Siren
 #if !REMOTETEST
                 AirHornLogic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.AirHorn, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.AirHorn, _elsVehicle, true);
 
             }
             if ((Game.IsControlJustReleased(0, ElsConfiguration.KBBindings.Sound_Ahorn) &&
@@ -27,7 +26,7 @@ namespace ELS.Siren
                 int[] patts = { _patternController.CurrentPrmPattern, _patternController.CurrentSecPattern, _patternController.CurrentWrnPattern };
                 AirHornLogic(false, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.AirHorn, _vehicle, false, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.AirHorn, _elsVehicle, false);
             }
         }
         void ManualTone1ControlsKB()
@@ -37,7 +36,7 @@ namespace ELS.Siren
 #if !REMOTETEST
                 SirenTone1Logic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone1, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone1, _elsVehicle, true);
             }
         }
         void ManualTone2ControlsKB()
@@ -47,7 +46,7 @@ namespace ELS.Siren
 #if !REMOTETEST
                 SirenTone2Logic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone2, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone2, _elsVehicle, true);
             }
         }
         void ManualTone3ControlsKB()
@@ -57,7 +56,7 @@ namespace ELS.Siren
 #if !REMOTETEST
                 SirenTone3Logic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone3, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone3, _elsVehicle, true);
             }
         }
         void ManualTone4ControlsKB()
@@ -67,21 +66,21 @@ namespace ELS.Siren
 #if !REMOTETEST
                 SirenTone4Logic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone4, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualTone4, _elsVehicle, true);
             }
         }
 
         void MainSirenToggleControlsKB()
         {
-            if ((Game.IsControlJustPressed(0, ElsConfiguration.KBBindings.Toggle_SIRN) 
+            if ((Game.IsControlJustReleased(0, ElsConfiguration.KBBindings.Toggle_SIRN) 
                 && Game.CurrentInputMode == InputMode.MouseAndKeyboard) || (Global.AllowController 
-                && Game.IsControlJustPressed(2, ElsConfiguration.GPBindings.Toggle_SIRN) 
+                && Game.IsControlJustReleased(2, ElsConfiguration.GPBindings.Toggle_SIRN) 
                 && Game.CurrentInputMode == InputMode.GamePad))
             {
 #if !REMOTETEST
                 MainSirenToggleLogic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, _elsVehicle, true);
             }
         }
 
@@ -93,14 +92,14 @@ namespace ELS.Siren
 #if !REMOTETEST
                 ManualSoundLogic(true, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualSound, _vehicle, true, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualSound, _elsVehicle, true);
             }
             if (Game.IsDisabledControlJustReleased(0, ElsConfiguration.KBBindings.Sound_Manul))
             {
 #if !REMOTETEST
                 ManualSoundLogic(false, true);
 #endif
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualSound, _vehicle, false, Game.Player.ServerId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.ManualSound, _elsVehicle, false);
             }
         }
 
@@ -112,39 +111,8 @@ namespace ELS.Siren
                 DualSirenLogic(true, true);
 #endif
                 System.Collections.Generic.Dictionary<String, object> dic = new System.Collections.Generic.Dictionary<string, object>();
-               // Manager.VehicleManager.SyncRequestReply(_vehicle.GetNetworkId());
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.DualSiren, _vehicle, true, Game.Player.ServerId);
-            }
-        }
-        int pressedTime;
-
-        void PanicAlarmControlsKB()
-        {
-            var bonePos = _vehicle.Bones["door_dside_f"].Position;
-            var pos = Game.Player.Character.GetPositionOffset(bonePos);
-            if (pos.Length() > 1.5)
-            {
-                return;
-            }
-            if (Game.IsControlJustPressed(0, ElsConfiguration.KBBindings.Snd_SrnPnic))
-            {
-                pressedTime = Game.GameTime;
-            }
-            if (Game.IsControlPressed(0, ElsConfiguration.KBBindings.Snd_SrnPnic))
-            {
-                if (pressedTime != -1 && Game.GameTime - pressedTime >= 499)
-                {
-                    pressedTime = -1;
-                    var state = !_tones.panicAlarm._state;
-#if !REMOTETEST
-                    PanicAlarmLogic(state);
-#endif
-                    RemoteEventManager.SendEvent(RemoteEventManager.Commands.PanicAlarm, _vehicle, state, Game.Player.ServerId);
-                }
-            }
-            if (Game.IsControlJustReleased(0, ElsConfiguration.KBBindings.Snd_SrnPnic))
-            {
-                pressedTime = -1;
+                // Manager.VehicleManager.SyncRequestReply(_vehicle.NetworkId);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.DualSiren, _elsVehicle, true);
             }
         }
     }
