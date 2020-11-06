@@ -9,12 +9,12 @@ namespace ELS.Manager
 {
     class VehicleList : Dictionary<int,ELSVehicle>
     {
-        internal Dictionary<int,Tuple<int,int>> VehRegAttempts;
+        internal Dictionary<int, object> RawData;
+        internal Dictionary<int,Tuple<int,int>> VehRegAttempts = new Dictionary<int, Tuple<int, int>>();
 
         internal VehicleList()
-        {
-            VehRegAttempts = new Dictionary<int,Tuple<int,int>>();
-        }
+        {}
+
         public void Add(int NetworkID)
         {
             var veh = new ELSVehicle(API.NetToVeh(NetworkID), NetworkID);
@@ -63,11 +63,11 @@ namespace ELS.Manager
             {
                 if (VehRegAttempts.ContainsKey(NetworkID))
                 {
-                    VehRegAttempts[NetworkID] = new Tuple<int, int>(VehRegAttempts[NetworkID].Item1 + 1, Game.GameTime);
+                    VehRegAttempts[NetworkID] = new Tuple<int, int>(VehRegAttempts[NetworkID].Item1 + 1, ELS.GameTime);
                 }
                 else
                 {
-                    VehRegAttempts.Add(NetworkID, new Tuple<int, int>(1, Game.GameTime));
+                    VehRegAttempts.Add(NetworkID, new Tuple<int, int>(1, ELS.GameTime));
                 }
                 try
                 {
@@ -77,14 +77,13 @@ namespace ELS.Manager
                         int handle = API.NetToVeh(NetworkID);
                         if (handle == 0)
                         {
-                            veh = new ELSVehicle(Game.PlayerPed.CurrentVehicle.Handle, Game.PlayerPed.CurrentVehicle.NetworkId);
+                            veh = new ELSVehicle(ELS.CurrentVehicle.Handle, ELS.CurrentVehicle.NetworkId);
                         }
                         else
                         {
                             veh = new ELSVehicle(handle, NetworkID);
                         }
                         Add(NetworkID, veh);
-                        //CurrentlyRegisteringVehicle.Remove(NetworkID);
                         vehicle = veh;
                         return true;
                     }
@@ -97,7 +96,6 @@ namespace ELS.Manager
                 catch (Exception ex)
                 {
                     Utils.DebugWriteLine($"Exsits Error: {ex.Message} due to {ex.InnerException} {ex.StackTrace} {ex}");
-                    //CurrentlyRegisteringVehicle.Remove(NetworkID);
                     vehicle = null;
                     return false;
                     throw ex;
@@ -124,29 +122,20 @@ namespace ELS.Manager
             {
                 if (VehRegAttempts.ContainsKey(NetworkID))
                 {
-                    VehRegAttempts[NetworkID] = new Tuple<int, int>(VehRegAttempts[NetworkID].Item1 + 1, Game.GameTime);
+                    VehRegAttempts[NetworkID] = new Tuple<int, int>(VehRegAttempts[NetworkID].Item1 + 1, ELS.GameTime);
                 }
                 else
                 {
-                    VehRegAttempts.Add(NetworkID, new Tuple<int, int>(1, Game.GameTime));
+                    VehRegAttempts.Add(NetworkID, new Tuple<int, int>(1, ELS.GameTime));
                 }
                 try
                 {
                     ELSVehicle veh = null;
-                    if (PlayerId != -1 && !API.NetworkDoesNetworkIdExist(NetworkID) && API.GetPlayerFromServerId(PlayerId) != -1)
+                    // Vehicle is out of scope so create it with just network id
+                    if (PlayerId != -1 && !API.NetworkDoesNetworkIdExist(NetworkID))
                     {
-                        Player player = new Player(API.GetPlayerFromServerId(PlayerId));
-                        var ped = player.Character;
-                        var currentVehicle = ped.CurrentVehicle;
-                        Utils.DebugWriteLine($"Registering vehicle with netid of {NetworkID} ({player.Character?.CurrentVehicle?.Handle}) to list from {player.Name}");
-                        if (currentVehicle == null || !currentVehicle.IsEls())
-                        {
-                            veh = new ELSVehicle(0, NetworkID, data);
-                        }
-                        if (veh == null)
-                        {
-                            veh = new ELSVehicle(currentVehicle.Handle, currentVehicle.NetworkId, data);
-                        }
+                        Utils.DebugWriteLine($"Registering vehicle with netid of {NetworkID} to list from {PlayerId}");
+                        veh = new ELSVehicle(0, NetworkID, data);
                         if (veh == null)
                         {
                             vehicle = null;
@@ -197,7 +186,6 @@ namespace ELS.Manager
             }
         }
 
-        
         public void CleanUP()
         {
             for(int i = 0; i < Count; i++)

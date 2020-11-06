@@ -116,12 +116,12 @@ namespace ELS.Gadgets
                 return;
             }
             VerticalAngle = API.GetVehicleDoorAngleRatio(lights.Vehicle.Handle, LadderVerticalIndex);
-            if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.Ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 VerticalAngle += 0.029999999f;
 
             }
-            if (Game.IsControlPressed(0, Control.PhoneDown) && ELS.ped.IsSittingInELSVehicle() && ELS.ped.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            if (Game.IsControlPressed(0, Control.PhoneDown) && ELS.Ped.IsSittingInELSVehicle() && ELS.Ped.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
 
                 VerticalAngle -= 0.029999999f;
@@ -143,12 +143,12 @@ namespace ELS.Gadgets
                 return;
             }
             VerticalAngle = API.GetVehicleDoorAngleRatio(lights.Vehicle.Handle, LadderVerticalIndex);
-            if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.Ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 HorizontalAngle += 0.029999999f;
 
             }
-            if (Game.IsControlPressed(0, Control.PhoneDown) && ELS.ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            if (Game.IsControlPressed(0, Control.PhoneDown) && ELS.Ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
 
                 HorizontalAngle -= 0.019999999f;

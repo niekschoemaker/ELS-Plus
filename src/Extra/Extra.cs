@@ -127,7 +127,7 @@ namespace ELS.Extra
                 }
                 else
                 {
-                    flashrate = Game.GameTime;
+                    flashrate = ELS.GameTime;
                 }
             }
 
@@ -183,7 +183,7 @@ namespace ELS.Extra
         private void SetTrue()
         {
             API.SetVehicleExtra(lights.Vehicle.Handle, _Id, false);
-            if (ELS.ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.Vehicle.NetworkId)
+            if (ELS.Ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.Vehicle.NetworkId)
             {
                 ElsUiPanel.SendLightData(true, $"#extra{_Id}", _extraInfo.Color);
             }
@@ -192,7 +192,7 @@ namespace ELS.Extra
         private void SetFalse()
         {
             API.SetVehicleExtra(lights.Vehicle.Handle, _Id, true);
-            if (ELS.ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
+            if (ELS.Ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 ElsUiPanel.SendLightData(false, $"#extra{_Id}", _extraInfo.Color);
             }
@@ -204,7 +204,7 @@ namespace ELS.Extra
         bool firstTick = true;
         internal async void ExtraTicker()
         {
-            if (flashrate != 0 && Game.GameTime - flashrate >= Delay)
+            if (flashrate != 0 && ELS.GameTime - flashrate >= Delay)
             {
                 allowflash = 1;
                 if (IsPatternRunning)
@@ -231,7 +231,7 @@ namespace ELS.Extra
                     CleanUp();
                     return;
                 }
-                flashrate = Game.GameTime;
+                flashrate = ELS.GameTime;
             }
             
 
@@ -385,9 +385,9 @@ namespace ELS.Extra
 
         internal void CleanUp()
         {
-            if (!Vehicle.Exists(lights.Vehicle) && lights.ElsVehicle.TryGetVehicle(out var vehicle))
+            if (!lights.ElsVehicle.Exists())
             {
-                lights.Vehicle = vehicle;
+                lights.Vehicle = lights.ElsVehicle.Vehicle;
             }
 
             if (lights.Vehicle == null)

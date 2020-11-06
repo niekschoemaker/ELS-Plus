@@ -53,7 +53,7 @@ namespace ELS.Siren
 
         internal void RunTick()
         {
-            var vehicle = _entity.GetVehicle;
+            var vehicle = _entity.Vehicle;
             if (!Vehicle.Exists(vehicle))
             {
                 if (soundId != -2)
@@ -70,7 +70,7 @@ namespace ELS.Siren
 
         internal void SetState(bool state)
         {
-            var vehicle = _entity.GetVehicle;
+            var vehicle = _entity.Vehicle;
             State = state;
             if (vehicle == null)
             {

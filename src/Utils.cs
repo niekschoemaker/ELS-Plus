@@ -97,13 +97,13 @@ namespace ELS
     {
         int _limit = 0;
 
-        public int Limit { set { _limit = CitizenFX.Core.Game.GameTime + value; } }
+        public int Limit { set { _limit = ELS.GameTime + value; } }
         public bool Expired
         {
             get
             {
 
-                if (CitizenFX.Core.Game.GameTime > _limit)
+                if (ELS.GameTime > _limit)
                 {
                     return true;
                 }

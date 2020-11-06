@@ -54,10 +54,9 @@ namespace ELS.Siren
 
         public void CleanUP(bool tooFarAwayCleanup = false)
         {
-            var vehicle = _elsVehicle.GetVehicle;
-            if (Vehicle.Exists(vehicle))
+            if (_elsVehicle.Exists())
             {
-                vehicle.IsSirenActive = false;
+                _elsVehicle.Vehicle.IsSirenActive = false;
             }
             if (!tooFarAwayCleanup)
             {

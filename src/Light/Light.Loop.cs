@@ -76,19 +76,19 @@ namespace ELS.Light
                     switch (_stage.CurrentStage)
                     {
                         case 1:
-                            if (!String.IsNullOrEmpty(_stage.PRML.PresetPatterns.Lstg1.Pattern) && _stage.PRML.PresetPatterns.Lstg1.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.PRML.PresetPatterns.Lstg1.Pattern) && _stage.PRML.PresetPatterns.Lstg1.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
                             break;
                         case 2:
-                            if (!String.IsNullOrEmpty(_stage.PRML.PresetPatterns.Lstg1.Pattern) && _stage.PRML.PresetPatterns.Lstg2.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.PRML.PresetPatterns.Lstg1.Pattern) && _stage.PRML.PresetPatterns.Lstg2.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
                             break;
                         case 3:
-                            if (!String.IsNullOrEmpty(_stage.PRML.PresetPatterns.Lstg1.Pattern) && _stage.PRML.PresetPatterns.Lstg3.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.PRML.PresetPatterns.Lstg1.Pattern) && _stage.PRML.PresetPatterns.Lstg3.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
@@ -105,19 +105,19 @@ namespace ELS.Light
                     switch (_stage.CurrentStage)
                     {
                         case 1:
-                            if (!String.IsNullOrEmpty(_stage.SECL.PresetPatterns.Lstg1.Pattern) && _stage.SECL.PresetPatterns.Lstg1.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.SECL.PresetPatterns.Lstg1.Pattern) && _stage.SECL.PresetPatterns.Lstg1.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
                             break;
                         case 2:
-                            if (!String.IsNullOrEmpty(_stage.SECL.PresetPatterns.Lstg1.Pattern) && _stage.SECL.PresetPatterns.Lstg2.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.SECL.PresetPatterns.Lstg1.Pattern) && _stage.SECL.PresetPatterns.Lstg2.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
                             break;
                         case 3:
-                            if (!String.IsNullOrEmpty(_stage.SECL.PresetPatterns.Lstg1.Pattern) && _stage.SECL.PresetPatterns.Lstg3.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.SECL.PresetPatterns.Lstg1.Pattern) && _stage.SECL.PresetPatterns.Lstg3.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
@@ -134,19 +134,19 @@ namespace ELS.Light
                     switch (_stage.CurrentStage)
                     {
                         case 1:
-                            if (!String.IsNullOrEmpty(_stage.WRNL.PresetPatterns.Lstg1.Pattern) && _stage.WRNL.PresetPatterns.Lstg1.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.WRNL.PresetPatterns.Lstg1.Pattern) && _stage.WRNL.PresetPatterns.Lstg1.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
                             break;
                         case 2:
-                            if (!String.IsNullOrEmpty(_stage.WRNL.PresetPatterns.Lstg1.Pattern) && _stage.WRNL.PresetPatterns.Lstg2.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.WRNL.PresetPatterns.Lstg1.Pattern) && _stage.WRNL.PresetPatterns.Lstg2.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
                             break;
                         case 3:
-                            if (!String.IsNullOrEmpty(_stage.WRNL.PresetPatterns.Lstg1.Pattern) && _stage.WRNL.PresetPatterns.Lstg3.Pattern.ToLower().Equals("scan") && _scan)
+                            if (!string.IsNullOrEmpty(_stage.WRNL.PresetPatterns.Lstg1.Pattern) && _stage.WRNL.PresetPatterns.Lstg3.Pattern.ToLower().Equals("scan") && _scan)
                             {
                                 ScanPatternTicker();
                             }
@@ -159,17 +159,14 @@ namespace ELS.Light
         int _patternStart = 0;
         internal void ScanPatternTicker()
         {
-            if (Game.GameTime - _patternStart > 15000)
+            if (ELS.GameTime - _patternStart > 15000)
             {
-                _patternStart = Game.GameTime;
-#if DEBUG
-                CitizenFX.Core.Debug.WriteLine("Toggling scan pattern");
-#endif
+                _patternStart = ELS.GameTime;
                 ToggleScanPattern();
             }
             else if (_patternStart == 0)
             {
-                _patternStart = Game.GameTime;
+                _patternStart = ELS.GameTime;
             }
         }
 
@@ -198,9 +195,6 @@ namespace ELS.Light
             //Game.DisableControlThisFrame(0, Control.CharacterWheel);
             if (Game.IsControlJustPressed(0, ElsConfiguration.KBBindings.ToggleBoard) && Game.IsControlPressed(0, Control.CharacterWheel) && Game.CurrentInputMode == InputMode.MouseAndKeyboard)
             {
-#if DEBUG
-                CitizenFX.Core.Debug.WriteLine($"Is Board raised  {_extras.BRD.BoardRaised}");
-#endif
                 if (_extras.Board.BoardRaised)
                 {
                     _extras.Board.RaiseBoardNow = false;

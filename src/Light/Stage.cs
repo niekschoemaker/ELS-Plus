@@ -29,7 +29,7 @@ namespace ELS.Light
             private set
             {
                 stage = value;
-                if (ELS.ped.IsSittingInELSVehicle() && vehicleId == ELS.CurrentVehicle.NetworkId)
+                if (ELS.Ped.IsSittingInELSVehicle() && vehicleId == ELS.CurrentVehicle.NetworkId)
                 {
                     ElsUiPanel.ToggleStages(CurrentStage);
                 }

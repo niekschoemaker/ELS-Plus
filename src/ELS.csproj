@@ -154,6 +154,7 @@
     <Compile Include="configuration\VCF.cs" />
     <Compile Include="Siren\Tone\Tones.cs" />
     <Compile Include="Extra\Extra.cs" />
+    <Compile Include="Vehicle\Vehicle.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="COPYING.LESSER">

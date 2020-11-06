@@ -22,14 +22,19 @@ namespace ELS
         private Light.Lights _light;
         private bool Loading = false;
         internal bool IsInitialized = false;
-        private Vehicle _vehicle;
+        private Vehicle _vehicle { get => vehicle; set
+            {
+                lastExists = ELS.GameTime;
+                lastExistsValue = Vehicle.Exists(vehicle);
+                vehicle = value;
+            }
+        }
         private Vcfroot _vcf;
         private int _lastTry = -1000;
         public bool IsSirenActive = false;
-        int lastdrivetime;
         internal int cachedNetId;
 
-        public ELSVehicle(int handle, int netId, [Optional]IDictionary<string, object> data) : base(handle)
+        public ELSVehicle(int handle, int netId, [Optional] IDictionary<string, object> data) : base(handle)
         {
             cachedNetId = netId;
             if (API.DoesEntityExist(handle))
@@ -45,20 +50,14 @@ namespace ELS
                 }
                 Init(handle);
             }
-            lastdrivetime = Game.GameTime;
+
             _light = new Light.Lights(this, _vcf, (IDictionary<string, object>)data?[DataNames.Light]);
             _siren = new Siren.Siren(this, _vcf, (IDictionary<string, object>)data?[DataNames.Siren], _light);
-            //_light.SetGTASirens(false);
+
             if (cachedNetId == 0)
             {
                 cachedNetId = _vehicle?.NetworkId ?? 0;
             }
-#if DEBUG
-            Utils.DebugWriteLine(API.IsEntityAMissionEntity(_vehicle.Handle).ToString());
-            Utils.DebugWriteLine($"ELSVehicle.cs:registering netid:{_vehicle.NetworkId}\n" +
-                $"Does entity belong to this script:{CitizenFX.Core.Native.API.DoesEntityBelongToThisScript(_vehicle.Handle, false)}");
-            Utils.DebugWriteLine($"ELSVehicle.cs:created vehicle");
-#endif
         }
         private async void ModelLoaded()
         {
@@ -68,9 +67,9 @@ namespace ELS
             }
             var start = API.GetGameTimer();
             Loading = true;
-            while (_vehicle.DisplayName == "CARNOTFOUND" && API.GetGameTimer() - start < 10000)
+            while (_vehicle.DisplayName == "CARNOTFOUND" && API.GetGameTimer() - start < 5000)
             {
-                await CitizenFX.Core.BaseScript.Delay(0);
+                await BaseScript.Delay(0);
             }
             Loading = false;
             if (_vehicle.DisplayName == "CARNOTFOUND")
@@ -117,9 +116,9 @@ namespace ELS
 
             try
             {
-                Function.Call((Hash)0x5f3a3574, _vehicle.Handle, true);
+                API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
             }
-            catch (Exception e)
+            catch
             {
                 Utils.ReleaseWriteLine("ELSVehicle.cs:Repair Fix is not enabled on this client");
             }
@@ -128,16 +127,17 @@ namespace ELS
         }
         internal void CleanUP(bool tooFarAwayCleanup = false)
         {
+            GetVehicle();
             _siren.CleanUP(tooFarAwayCleanup);
             _light.CleanUP(tooFarAwayCleanup);
-#if DEBUG
-            Utils.DebugWriteLine("ELSVehicle.cs:running vehicle deconstructor");
-#endif
         }
 
         Timer getVehicleTimer = new Timer();
-        internal Vehicle GetVehicle { get {
-                if (!Vehicle.Exists(_vehicle) && getVehicleTimer.Expired && API.NetworkDoesNetworkIdExist(cachedNetId))
+        internal Vehicle Vehicle
+        {
+            get
+            {
+                if (getVehicleTimer.Expired && !Vehicle.Exists(_vehicle) && API.NetworkDoesNetworkIdExist(cachedNetId))
                 {
                     var handle = API.NetworkGetEntityFromNetworkId(cachedNetId);
                     CitizenFX.Core.Debug.WriteLine($"Attempting to init vehicle: net: {cachedNetId} ({handle})");
@@ -145,11 +145,24 @@ namespace ELS
                     getVehicleTimer.Limit = 2000;
                 }
                 return _vehicle;
-            } }
+            }
+        }
+
+        public Vehicle GetVehicle()
+        {
+            if (getVehicleTimer.Expired && !Vehicle.Exists(_vehicle) && API.NetworkDoesNetworkIdExist(cachedNetId))
+            {
+                var handle = API.NetworkGetEntityFromNetworkId(cachedNetId);
+                CitizenFX.Core.Debug.WriteLine($"Attempting to init vehicle: net: {cachedNetId} ({handle})");
+                Init(handle);
+                getVehicleTimer.Limit = 2000;
+            }
+            return _vehicle;
+        }
 
         internal bool TryGetVehicle(out Vehicle vehicle)
         {
-            vehicle = GetVehicle;
+            vehicle = Vehicle;
             return vehicle != null;
         }
 
@@ -157,7 +170,7 @@ namespace ELS
         {
             if (!IsInitialized || !Vehicle.Exists(_vehicle))
             {
-                if (Game.GameTime - _lastTry > 1000)
+                if (ELS.GameTime - _lastTry > 1000)
                 {
                     _vehicle = null;
                     if (API.NetworkDoesNetworkIdExist(cachedNetId))
@@ -166,7 +179,7 @@ namespace ELS
                     }
                     else
                     {
-                        _lastTry = Game.GameTime;
+                        _lastTry = ELS.GameTime;
                         return;
                     }
                 }
@@ -185,18 +198,18 @@ namespace ELS
         {
             if (!IsInitialized || !Vehicle.Exists(_vehicle))
             {
-                if (Game.GameTime - _lastTry > 1000)
+                if (ELS.GameTime - _lastTry > 1000)
                 {
                     _vehicle = null;
                     IsInitialized = false;
                     if (API.NetworkDoesNetworkIdExist(cachedNetId))
                     {
-                        _lastTry = Game.GameTime;
+                        _lastTry = ELS.GameTime;
                         Init(API.NetworkGetEntityFromNetworkId(cachedNetId));
                     }
                     else
                     {
-                        _lastTry = Game.GameTime;
+                        _lastTry = ELS.GameTime;
                         return;
                     }
                 }
@@ -211,7 +224,7 @@ namespace ELS
             }
 
             Function.Call(Hash._SET_DISABLE_VEHICLE_SIREN_SOUND, _vehicle.Handle, true);
-            var distance = Vector3.Distance(ELS.position, _vehicle.Position);
+            var distance = Vector3.Distance(ELS.Position, _vehicle.Position);
             if (distance > deactivateDistance && IsSirenActive)
             {
                 Utils.ReleaseWriteLine($"Stopping siren for netId {cachedNetId}");
@@ -263,9 +276,18 @@ namespace ELS
 
         internal int GetStage() => _light._stage.CurrentStage;
 
+        int lastExists = 0;
+        bool lastExistsValue = false;
+        private Vehicle vehicle;
+
         public override bool Exists()
         {
-            return Vehicle.Exists(_vehicle) || cachedNetId != 0;
+            if (lastExists == ELS.GameTime)
+            {
+                return lastExistsValue;
+            }
+            lastExistsValue = Vehicle.Exists(_vehicle);
+            return lastExistsValue;
         }
 
         public void DisableSiren()
@@ -419,7 +441,7 @@ namespace ELS
                 Utils.DeveloperWriteLine("SyncRequestReply invoked from ELSVehicle::SetInofVehicle 446");
                 VehicleManager.SyncRequestReply(RemoteEventManager.Commands.ChangePrmPatt, NetworkId);
             }
-            
+
         }
     }
 }

@@ -124,8 +124,8 @@ namespace ELS_Server
             _lastPlayerData[networkId] = player;
 
             TriggerClientEvent(EventNames.NewFullSyncData, expandoData, networkId, int.Parse(player.Handle));
-            var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(networkId));
-            vehicle.State["els"] = new { applied = true };
+            //var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(networkId));
+            //vehicle.State["els"] = new { applied = true };
         }
 
         [EventHandler(EventNames.FullSycnRequestAll)]
@@ -175,8 +175,8 @@ namespace ELS_Server
                 _lastPlayerData[NetworkID] = player;
 
                 TriggerClientEvent(EventNames.NewLightSyncData, expandoData, NetworkID, int.Parse(player.Handle));
-                var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(NetworkID));
-                vehicle.State["els"] = new { applied = true };
+                //var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(NetworkID));
+                //vehicle.State["els"] = new { applied = true };
             }
             catch (Exception e)
             {
@@ -216,8 +216,8 @@ namespace ELS_Server
                 _lastPlayerData[NetworkID] = player;
 
                 TriggerClientEvent(EventNames.NewSirenSyncData, expandoData, NetworkID, int.Parse(player.Handle));
-                var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(NetworkID));
-                vehicle.State["els"] = new { applied = true };
+                //var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(NetworkID));
+                //vehicle.State["els"] = new { applied = true };
             }
             catch (Exception e)
             {

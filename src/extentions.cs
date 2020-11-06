@@ -6,10 +6,15 @@ namespace ELS
 {
     public static class Extentions
     {
-        internal static int lastTick = Game.GameTime;
+        internal static int lastTick = ELS.GameTime;
         public static bool IsEls(this Vehicle vehicle)
         {
             return Vehicle.Exists(vehicle) && vehicle.IsNetworked() && configuration.VCF.ELSVehicle.ContainsKey(vehicle.Model);
+        }
+
+        public static bool Exists(this Vehicle vehicle)
+        {
+            return vehicle is object && vehicle.Exists();
         }
 
         public static bool ToBoolean(this object obj)

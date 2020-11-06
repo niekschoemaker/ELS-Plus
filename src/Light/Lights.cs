@@ -66,7 +66,7 @@ namespace ELS.Light
         {
             Vcfroot = vcfroot;
             ElsVehicle = vehicle;
-            Vehicle = vehicle.GetVehicle;
+            Vehicle = vehicle.Vehicle;
             LightStagesSetup();
             if (Vehicle.Exists(Vehicle))
             {
@@ -89,7 +89,7 @@ namespace ELS.Light
 
         private void Init()
         {
-            Vehicle = ElsVehicle.GetVehicle;
+            Vehicle = ElsVehicle.Vehicle;
             if (!Vehicle.Exists(Vehicle))
             {
                 Vehicle = null;

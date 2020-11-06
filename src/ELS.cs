@@ -36,10 +36,10 @@ namespace ELS
 {
     public class ELS : BaseScript
     {
+        public static int GameTime { get; private set; }
         internal static Vehicle CurrentVehicle { get; set; }
         private readonly FileLoader _FileLoader;
         private SpotLight _spotLight;
-        private readonly VehicleManager _vehicleManager;
         private ElsConfiguration _controlConfiguration;
         private bool _firstTick = false;
         internal static string ServerId;
@@ -50,7 +50,6 @@ namespace ELS
             bool Loaded = false;
             _controlConfiguration = new ElsConfiguration();
             _FileLoader = new FileLoader(this);
-            _vehicleManager = new VehicleManager();
             EventHandlers["onClientResourceStart"] += new Action<string>(async (string obj) =>
                 {
                     //TODO rewrite loader so that it 
@@ -126,14 +125,14 @@ namespace ELS
             {
                 if (obj == Function.Call<string>(Hash.GET_CURRENT_RESOURCE_NAME))
                 {
-                    _vehicleManager.CleanUP();
+                    VehicleManager.Instance.CleanUP();
                     _FileLoader.UnLoadFilesFromScript(obj);
                 }
             });
 
             EventHandlers[EventNames.VcfSyncClient] += new Action<List<dynamic>>((vcfs) =>
              {
-                  VCF.ParseVcfs(vcfs);
+                 VCF.ParseVcfs(vcfs);
              });
 
             EventHandlers.Add("ELS:PatternSync:Client", new Action<List<dynamic>>((patterns) =>
@@ -142,7 +141,7 @@ namespace ELS
             }));
             EventHandlers["ELS:FullSync:NewSpawnWithData"] += new Action<System.Dynamic.ExpandoObject>((a) =>
             {
-                _vehicleManager.SyncAllVehiclesOnFirstSpawn(a);
+                VehicleManager.Instance.SyncAllVehiclesOnFirstSpawn(a);
             });
         }
 
@@ -189,19 +188,19 @@ namespace ELS
         [EventHandler(EventNames.NewLightSyncData)]
         public void SetVehicleLightData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
         {
-            _vehicleManager.SetVehicleLightData(dataDic, NetworkId, PlayerId);
+            VehicleManager.Instance.SetVehicleLightData(dataDic, NetworkId, PlayerId);
         }
 
         [EventHandler(EventNames.NewSirenSyncData)]
         public void SetVehicleSirenData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
         {
-            _vehicleManager.SetVehicleSirenData(dataDic, NetworkId, PlayerId);
+            VehicleManager.Instance.SetVehicleSirenData(dataDic, NetworkId, PlayerId);
         }
 
         [EventHandler(EventNames.NewFullSyncData)]
         public void SetVehicleFullSyncData(IDictionary<string, object> dataDic, int networkId, int PlayerId)
         {
-            _vehicleManager.SetVehicleSyncData(dataDic, networkId, PlayerId);
+            VehicleManager.Instance.SetVehicleSyncData(dataDic, networkId, PlayerId);
         }
 
         [EventHandler(EventNames.FullSyncNewSpawn)]
@@ -220,10 +219,10 @@ namespace ELS
         [EventHandler(EventNames.RemoveStale)]
         public void RemoveStale(int netId, bool dead)
         {
-            if (VehicleManager.vehicleList.ContainsKey(netId))
+            if (VehicleManager.vehicleList.TryGetValue(netId, out var eLSVehicle))
             {
                 Utils.ReleaseWriteLine($"{netId} was removed. Reason: doesn't exist.");
-                VehicleManager.vehicleList[netId].CleanUP();
+                eLSVehicle.CleanUP();
                 VehicleManager.vehicleList.Remove(netId);
             }
             else
@@ -238,7 +237,7 @@ namespace ELS
             Vehicle vehicle = new Vehicle(veh);
             try
             {
-                if (Vehicle.Exists(vehicle) && vehicle.IsEls())
+                if (vehicle != null && vehicle.IsEls())
                 {
                     if (netId == vehicle.Handle)
                     {
@@ -275,7 +274,7 @@ namespace ELS
             foreach (var car in VehicleManager.vehicleList)
             {
                 var stage = car.Value.GetStage();
-                var vehicle = car.Value.GetVehicle;
+                var vehicle = car.Value.Vehicle;
                 sb.AppendLine($"{vehicle?.Handle} ({car.Value.cachedNetId}:{car.Key}:{car.Value.NetworkId}) : stage: {stage}");
             }
             Utils.ReleaseWriteLine(sb.ToString());
@@ -328,14 +327,18 @@ namespace ELS
         }
 
         int lastCall = 0;
+        private static Player player;
+        private static Ped ped;
+        private static Vector3? position;
+
         [Command("vcfsync")]
         public void VcfSync()
         {
-            if (Game.GameTime - lastCall < 10000)
+            if (GameTime - lastCall < 60000)
             {
                 return;
             }
-            lastCall = Game.GameTime;
+            lastCall = GameTime;
             TriggerServerEvent(EventNames.VcfSyncServer, Game.Player.ServerId);
         }
 
@@ -373,91 +376,12 @@ namespace ELS
             task.Start();
         }
 
-        internal async Task<Vehicle> SpawnCar(string veh)
-        {
-            Model hash = Game.GenerateHash(veh);
-            if (String.IsNullOrEmpty(veh))
-            {
-                Screen.ShowNotification("Vehicle not found please try again");
-                return null;
-            }
-            if (!VCF.ELSVehicle.ContainsKey(hash))
-            {
-                Screen.ShowNotification("Vehicle not ELS please try again");
-                return null;
-            }
-            if (Game.PlayerPed.IsInVehicle())
-            {
-                if (Game.PlayerPed.CurrentVehicle.IsEls())
-                {
-                    if (VehicleManager.vehicleList.ContainsKey(Game.PlayerPed.CurrentVehicle.NetworkId))
-                    {
-                        VehicleManager.vehicleList[Game.PlayerPed.CurrentVehicle.NetworkId].Delete();
-                    }
-                    else
-                    {
-                        Game.PlayerPed.CurrentVehicle.Delete();
-                    }
-
-                }
-                else
-                {
-                    Game.PlayerPed.CurrentVehicle.Delete();
-                }
-            }
-            CitizenFX.Core.Debug.WriteLine($"Attempting to spawn: {veh}");
-            var polModel = new Model((VehicleHash)hash);
-            await polModel.Request(-1);
-            Vehicle _veh = new Vehicle(API.CreateVehicle((uint)polModel.Hash, Game.PlayerPed.Position.X, Game.PlayerPed.Position.Y + 5f, Game.PlayerPed.Position.Z, Game.PlayerPed.Heading, true, false));
-            VehicleManager.MakeNetworked(_veh);
-            Game.PlayerPed.SetIntoVehicle(_veh, VehicleSeat.Driver);
-            polModel.MarkAsNoLongerNeeded();
-            return _veh;
-        }
-
-        internal async Task<Vehicle> SpawnCar(string veh, dynamic coords)
-        {
-            Model hash = Game.GenerateHash(veh);
-            if (String.IsNullOrEmpty(veh))
-            {
-                Screen.ShowNotification("Vehicle not found please try again");
-                return null;
-            }
-            if (!VCF.ELSVehicle.ContainsKey(hash))
-            {
-                Screen.ShowNotification("Vehicle not ELS please try again");
-                return null;
-            }
-            if (Game.PlayerPed.IsInVehicle())
-            {
-                if (Game.PlayerPed.CurrentVehicle.IsEls())
-                {
-                    VehicleManager.vehicleList[Game.PlayerPed.CurrentVehicle.NetworkId].Delete();
-                }
-                else
-                {
-                    Game.PlayerPed.CurrentVehicle.Delete();
-                }
-            }
-            CitizenFX.Core.Debug.WriteLine($"Attempting to spawn: {veh}");
-            var polModel = new Model((VehicleHash)hash);
-            await polModel.Request(-1);
-
-            Vehicle _veh = new Vehicle(API.CreateVehicle((uint)Game.GenerateHash(veh), coords.x, coords.y + 5f, coords.z, Game.PlayerPed.Heading, true, false));
-            VehicleManager.MakeNetworked(_veh);
-            polModel.MarkAsNoLongerNeeded();
-            _veh.PlaceOnGround();
-            Game.PlayerPed.SetIntoVehicle(_veh, VehicleSeat.Driver);
-            polModel.MarkAsNoLongerNeeded();
-            return _veh;
-        }
-
         public static string CurrentResourceName()
         {
             return Function.Call<string>(Hash.GET_CURRENT_RESOURCE_NAME);
         }
 
-#region Callbacks for GUI
+        #region Callbacks for GUI
         public void RegisterNUICallback(string msg, Func<IDictionary<string, object>, CallbackDelegate, CallbackDelegate> callback)
         {
             CitizenFX.Core.Debug.WriteLine($"Registering NUI EventHandler for {msg}");
@@ -478,9 +402,39 @@ namespace ELS
         }
         #endregion
 
-        internal static Player player;
-        internal static Ped ped;
-        internal static Vector3 position;
+        internal static Player Player
+        {
+            get {
+                if (player == null)
+                {
+                    player = new Player(API.PlayerId());
+                }
+                return player;
+            }
+            private set => player = value; }
+        internal static Ped Ped
+        {
+            get
+            {
+                if (ped == null)
+                {
+                    ped = new Ped(API.PlayerPedId());
+                }
+                return ped;
+            }
+            private set => ped = value;
+        }
+        internal static Vector3 Position {
+            get
+            {
+                if (position == null)
+                {
+                    position = Ped.Position;
+                }
+                return position.GetValueOrDefault();
+            }
+            set => position = value;
+        }
         private async Task Class1_Tick()
         {
             try
@@ -492,12 +446,11 @@ namespace ELS
                     RegisterNUICallback("keyPress", ElsUiPanel.KeyPress);
                     _firstTick = true;
                 }
-                player = new Player(API.PlayerId());
-                ped = new Ped(API.PlayerPedId());
-                position = ped.Position;
-                _vehicleManager.RunTick();
-                //Function.Call((Hash)3520272001, "car.defaultlight.night.emissive.on", 1100.0f);
-                //Function.Call((Hash)3520272001, "car.defaultlight.day.emissive.on", 1700.0f);
+                GameTime = Game.GameTime;
+                Player = null;
+                Ped = null;
+                position = null;
+                VehicleManager.Instance.RunTick();
                 if (CurrentVehicle?.IsEls() ?? false)
                 {
                     Game.DisableControlThisFrame(0, Control.FrontendPause);
@@ -528,10 +481,7 @@ namespace ELS
             }
             catch (Exception ex)
             {
-                //TriggerServerEvent($"ONDEBUG", ex.ToString());
-                //await Delay(5000);
                 Utils.ReleaseWriteLine($"ERROR {ex}");
-                //throw ex;
             }
         }
     }

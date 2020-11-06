@@ -15,55 +15,20 @@ namespace ELS.Manager
 {
     class VehicleManager
     {
-        internal static VehicleList vehicleList;
+        internal static VehicleList vehicleList = new VehicleList();
         internal static bool WasPaused = false;
         static bool notified = false;
-        public VehicleManager()
-        {
-            vehicleList = new VehicleList();
-        }
+        private VehicleManager() { }
 
-        internal static void MakeNetworked(Vehicle veh)
-        {
-            //////////
-            ///
-            ///  THANKS to Antivirus-chan in the FiveM community for supplying this code
-            ///
-            //////////
-            var attempts = 0;
-            var netId = API.VehToNet(veh.Handle);
-            do
-            {
-                //BaseScript.Delay(500);
-                API.NetworkRegisterEntityAsNetworked(veh.Handle);
-                API.SetEntityAsMissionEntity(veh.Handle, false, false);
-                if (veh.IsNetworked())
-                {
-                    API.SetNetworkIdCanMigrate(netId, true);
-                    API.SetNetworkIdExistsOnAllMachines(netId, true);
-                }
-                API.NetworkRequestControlOfEntity(veh.Handle);
-                attempts++;
-            }
-            while (!veh.IsNetworked() && attempts < 20);
-            if (attempts == 20 && !notified)
-            {
-                CitizenFX.Core.Debug.WriteLine("Failed to register entity on net");
-                notified = true;
-            }
-            else if (!notified)
-            {
-                Debug.WriteLine($"Registered {veh.Handle} on net as {veh.NetworkId}");
-                BaseScript.TriggerEvent("ELS:VehicleEntered");
-                notified = true;
-            }
-        }
+        private static readonly Lazy<VehicleManager> lazy = new Lazy<VehicleManager>(() => new VehicleManager());
+        public static VehicleManager Instance { get { return lazy.Value; } }
+
         internal void RunTick()
         {
             try
             {
                 // If in ELS vehicle
-                if (ELS.ped.IsSittingInELSVehicle() && ELS.ped.IsSittingInDriverOrPassengerSeat(ELS.CurrentVehicle))
+                if (ELS.Ped.IsSittingInELSVehicle() && ELS.Ped.IsSittingInDriverOrPassengerSeat(ELS.CurrentVehicle))
                 {
                     API.SetVehicleDeformationFixed(ELS.CurrentVehicle.Handle);
                     var netId = ELS.CurrentVehicle.NetworkId;
@@ -77,7 +42,7 @@ namespace ELS.Manager
                         }
                         else
                         {
-                            if (!vehicleList.VehRegAttempts.ContainsKey(netId) || Game.GameTime - vehicleList.VehRegAttempts[netId].Item2 >= 15000 && vehicleList.VehRegAttempts[netId].Item1 < 5)
+                            if (!vehicleList.VehRegAttempts.ContainsKey(netId) || ELS.GameTime - vehicleList.VehRegAttempts[netId].Item2 >= 15000 && vehicleList.VehRegAttempts[netId].Item1 < 5)
                             {
                                 if (ELS.CurrentVehicle.IsNetworked() && vehicleList.MakeSureItExists(netId, vehicle: out ELSVehicle _currentVehicle))
                                 {
@@ -169,7 +134,11 @@ namespace ELS.Manager
                 vehicleList[networkId].SetData(dataDic);
                 return;
             }
-            if (hasSirenOrLightData && (!vehicleList.VehRegAttempts.ContainsKey(networkId) || (Game.GameTime - vehicleList.VehRegAttempts[networkId].Item2 >= 15000 && vehicleList.VehRegAttempts[networkId].Item1 < 5)))
+            if (API.GetPlayerFromServerId(PlayerId) == -1)
+            {
+
+            }
+            if (hasSirenOrLightData && (!vehicleList.VehRegAttempts.ContainsKey(networkId) || (ELS.GameTime - vehicleList.VehRegAttempts[networkId].Item2 >= 15000 && vehicleList.VehRegAttempts[networkId].Item1 < 5)))
             {
                 if (!vehicleList.MakeSureItExists(networkId, dataDic, out ELSVehicle veh1, PlayerId))
                 {
