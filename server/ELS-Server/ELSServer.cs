@@ -238,26 +238,24 @@ namespace ELS_Server
 
         private async Task Server_Tick()
         {
-            var time = API.GetGameTimer();
-            if (time >= RemoveTimer + 10000)
+            RemoveTimer = API.GetGameTimer();
+            var removeList = new List<int>();
+            foreach (var a in _cachedData)
             {
-                RemoveTimer = API.GetGameTimer();
-                var removeList = new List<int>();
-                foreach (var a in _cachedData)
+                await Delay(0);
+                var _vehicle = API.NetworkGetEntityFromNetworkId(a.Key);
+                if (!API.DoesEntityExist(_vehicle))
                 {
-                    var _vehicle = API.NetworkGetEntityFromNetworkId(a.Key);
-                    if (!API.DoesEntityExist(_vehicle))
-                    {
-                        removeList.Add(a.Key);
-                    }
-                }
-                foreach (var a in removeList)
-                {
-                    Utils.ReleaseWriteLine($"Removing netId: {a}");
-                    TriggerClientEvent(EventNames.RemoveStale, a);
-                    _cachedData.Remove(a);
+                    removeList.Add(a.Key);
                 }
             }
+            foreach (var a in removeList)
+            {
+                Utils.ReleaseWriteLine($"Removing netId: {a}");
+                TriggerClientEvent(EventNames.RemoveStale, a);
+                _cachedData.Remove(a);
+            }
+            await Delay(30000);
         }
     }
 }

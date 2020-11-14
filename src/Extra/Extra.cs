@@ -148,6 +148,10 @@ namespace ELS.Extra
             private set
             {
                 _state = value;
+                if (lights.Vehicle == null)
+                {
+                    return;
+                }
                 if (value)
                 {
                     SetTrue();
