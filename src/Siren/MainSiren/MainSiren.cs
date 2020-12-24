@@ -26,6 +26,7 @@ namespace ELS.Siren
             /// <param name="enable"></param>
             internal void SetEnable(bool enable)
             {
+                if (_enable == enable) return;
                 _enable = enable;
                 if (_enable) //turning the main siren on
                 {

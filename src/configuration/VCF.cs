@@ -19,6 +19,7 @@
 using CitizenFX.Core;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Text;
 
@@ -47,15 +48,16 @@ namespace ELS.configuration
         {
         }
 
-        internal static async void ParseVcfs(List<dynamic> VcfData)
+        internal static async void ParseVcfs(List<object> VcfData)
         {
-            foreach (dynamic vcf in VcfData)
+            foreach (object obj in VcfData)
             {
+                var vcf = obj as IDictionary<string, object>;
                 await BaseScript.Delay(50);
 #if DEBUG
                 Utils.DebugWriteLine($"Currently adding {vcf.Item2} from {vcf.Item1}");
 #endif
-                load(SettingsType.Type.VCF, vcf.Item2, vcf.Item3, vcf.Item1);
+                load(SettingsType.Type.VCF, vcf["Item2"] as string, vcf["Item3"] as string, vcf["Item1"] as string);
             }
         }
 

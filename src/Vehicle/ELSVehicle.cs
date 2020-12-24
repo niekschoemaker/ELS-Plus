@@ -5,9 +5,6 @@ using CitizenFX.Core;
 using ELS.configuration;
 using CitizenFX.Core.Native;
 using ELS.Manager;
-using System.Threading.Tasks;
-using ELS.NUI;
-using System.Diagnostics;
 using Shared;
 
 namespace ELS
@@ -18,6 +15,12 @@ namespace ELS
         internal const float maxDistance = 200.0f;
         internal const float deactivateDistance = maxDistance + 10.0f;
         internal const float reactivateDistance = maxDistance - 10.0f;
+        internal int lastCheck = 0;
+        internal int lastAutoDisable = 0;
+
+#if STATEBAG
+        public StateBag State { get; set; }
+#endif
         private Siren.Siren _siren;
         private Light.Lights _light;
         private bool Loading = false;
@@ -51,7 +54,7 @@ namespace ELS
                 Init(handle);
             }
 
-            _light = new Light.Lights(this, _vcf, (IDictionary<string, object>)data?[DataNames.Light]);
+            _light = new Light.Lights(this, _vcf);
             _siren = new Siren.Siren(this, _vcf, (IDictionary<string, object>)data?[DataNames.Siren], _light);
 
             if (cachedNetId == 0)
@@ -91,6 +94,9 @@ namespace ELS
                 IsInitialized = false;
                 return;
             }
+#if STATEBAG
+            State = _vehicle.State;
+#endif
             ModelLoaded();
             API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
             API.SetVehRadioStation(_vehicle.Handle, "OFF");
@@ -244,6 +250,11 @@ namespace ELS
 #endif
             }
 
+            //if (ELS.GameTime - lastCheck > 100)
+            //{
+            //    _siren.SetData(State["elssiren"]);
+            //    _light.SetData(State["elslight"]);
+            //}
             if (distance < reactivateDistance)
             {
                 _siren.Ticker();
@@ -255,8 +266,9 @@ namespace ELS
 
             _light.Ticker();
 
-            if (_siren._mainSiren._enable && _light._stage.CurrentStage != 3)
+            if (_siren._mainSiren._enable && _light._stage.CurrentStage != 3 && ELS.GameTime - lastAutoDisable > 1000)
             {
+                lastAutoDisable = ELS.GameTime;
                 Utils.DeveloperWriteLine("Disabling siren because stage not 3");
                 _siren._mainSiren.SetEnable(false);
                 RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, this, true);
@@ -354,25 +366,35 @@ namespace ELS
         /// <param name="dataDic"></param>
         public void SetData(IDictionary<string, object> data)
         {
+#if STATEBAG
+            if (State != null)
+            {
+                var siren = State["elssiren"] as IDictionary<string, object>;
+                _siren.SetData(siren);
+
+                var light = State["elslight"] as IDictionary<string, object>;
+                _light.SetData(light);
+            }
+#else
             if (data.TryGetValue(DataNames.Siren, out var siren))
             {
                 _siren.SetData((IDictionary<string, object>)siren);
             }
-
             if (data.TryGetValue(DataNames.Light, out var light))
             {
                 _light.SetData((IDictionary<string, object>)light);
             }
+#endif
         }
 
         public void SetLightData(IDictionary<string, object> data)
         {
-            _siren.SetData(data);
+            _light.SetData(data);
         }
 
         public void SetSirenData(IDictionary<string, object> data)
         {
-            _light.SetData(data);
+            _siren.SetData(data);
         }
 
         public Dictionary<string, object> GetData()

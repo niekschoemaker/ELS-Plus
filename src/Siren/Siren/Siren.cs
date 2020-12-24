@@ -27,7 +27,7 @@ namespace ELS.Siren
         private bool _isInitialized = false;
         IPatterns _patternController;
         internal Tones _tones;
-        public Siren(ELSVehicle vehicle,Vcfroot vcfroot,[Optional]IDictionary<string,object> data, IPatterns patt)
+        public Siren(ELSVehicle vehicle,Vcfroot vcfroot, [Optional]IDictionary<string,object> data, IPatterns patt)
         {
             _vcf = vcfroot;
             _elsVehicle = vehicle;

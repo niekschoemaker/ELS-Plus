@@ -7,7 +7,6 @@ namespace ELS.Light
         void CleanUP(bool tooFarAwayCleanup = false);
         void Ticker();
         void ControlTicker();
-        void LightsControlsRemote();
         Vehicle _vehicle { get; set; }
     }
 }

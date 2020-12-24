@@ -53,19 +53,13 @@ namespace ELS.Extra
         internal string PatternType
         {
             get { return _pattType; }
-            set
-            {
-                _pattType = value;
-            }
+            set { _pattType = value; }
         }
 
         internal int PatternNum
         {
             get { return _pattnum; }
-            set
-            {
-                _pattnum = value;
-            }
+            set { _pattnum = value; }
         }
 
         internal int Id
@@ -82,6 +76,7 @@ namespace ELS.Extra
             get { return _on; }
             set
             {
+                if (_on == value) return;
                 _on = value;
                 if (TurnedOn)
                 {
@@ -118,6 +113,7 @@ namespace ELS.Extra
             get { return _pattRunning; }
             set
             {
+                if (_pattRunning == value) return;
                 _pattRunning = value;
                 if (!IsPatternRunning)
                 {

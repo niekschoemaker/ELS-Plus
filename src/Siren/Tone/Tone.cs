@@ -70,6 +70,7 @@ namespace ELS.Siren
 
         internal void SetState(bool state)
         {
+            if (state == State) return;
             var vehicle = _entity.Vehicle;
             State = state;
             if (vehicle == null)

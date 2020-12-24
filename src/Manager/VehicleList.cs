@@ -89,6 +89,7 @@ namespace ELS.Manager
                     }
                     else
                     {
+                        Utils.DebugWriteLine($"Vehicle with netId {NetworkID} doesn't exist.");
                         vehicle = null;
                         return false;
                     }

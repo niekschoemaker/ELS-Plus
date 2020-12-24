@@ -3,12 +3,10 @@ using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using ELS.Light;
 using ELSShared;
-using Newtonsoft.Json;
 using Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using static ELS.RemoteEventManager;
 
 namespace ELS.Manager
@@ -34,11 +32,9 @@ namespace ELS.Manager
                     var netId = ELS.CurrentVehicle.NetworkId;
                     if (API.NetworkDoesNetworkIdExist(netId))
                     {
-                        if (vehicleList.ContainsKey(netId))
+                        if (vehicleList.TryGetValue(netId, out var currentVehicle))
                         {
-                            ELSVehicle _currentVehicle = vehicleList[netId];
-                            _currentVehicle?.RunControlTick();
-                            ELS.CurrentVehicle.SetExistOnAllMachines(true);
+                            currentVehicle.RunControlTick();
                         }
                         else
                         {
@@ -47,7 +43,6 @@ namespace ELS.Manager
                                 if (ELS.CurrentVehicle.IsNetworked() && vehicleList.MakeSureItExists(netId, vehicle: out ELSVehicle _currentVehicle))
                                 {
                                     _currentVehicle?.RunControlTick();
-                                    ELS.CurrentVehicle.SetExistOnAllMachines(true);
                                 }
                             }
                         }
@@ -195,7 +190,7 @@ namespace ELS.Manager
             }
         }
 
-        internal void SyncAllVehiclesOnFirstSpawn(System.Dynamic.ExpandoObject data)
+        internal void SyncAllVehiclesOnFirstSpawn(IDictionary<string, object> data)
         {
             //dynamic k = data;
             var y = data.ToArray();

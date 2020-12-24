@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace ELS
 {
-    public static class Extentions
+    public static class Extensions
     {
         internal static int lastTick = ELS.GameTime;
         public static bool IsEls(this Vehicle vehicle)
@@ -29,13 +29,20 @@ namespace ELS
 
         public static bool IsSittingInDriverOrPassengerSeat(this Ped ped, Vehicle vehicle)
         {
-            return ELS.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == ped || ELS.CurrentVehicle.GetPedOnSeat(VehicleSeat.Passenger) == ped;
+            return ped.IsSittingInDriverSeat() || ELS.CurrentSeat == (int)VehicleSeat.Passenger;
+        }
+
+        public static bool IsSittingInDriverSeat(this Ped ped)
+        {
+            return ELS.CurrentSeat == (int)VehicleSeat.Driver;
         }
         
         public static bool IsSittingInELSVehicle(this Ped ped)
         {
             return ELS.CurrentVehicle?.IsEls() ?? false; 
         }
+
+
 
         async public static Task<bool> RequestCollision(this Vehicle vehicle)
         {

@@ -24,6 +24,7 @@ using ELS.Light;
 using ELS.Manager;
 using ELS.NUI;
 using ELSShared;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -37,7 +38,8 @@ namespace ELS
     public class ELS : BaseScript
     {
         public static int GameTime { get; private set; }
-        internal static Vehicle CurrentVehicle { get; set; }
+        internal static int? CurrentSeat { get; private set; }
+        internal static Vehicle CurrentVehicle { get; private set; }
         private readonly FileLoader _FileLoader;
         private SpotLight _spotLight;
         private ElsConfiguration _controlConfiguration;
@@ -52,14 +54,8 @@ namespace ELS
             _FileLoader = new FileLoader(this);
             EventHandlers["onClientResourceStart"] += new Action<string>(async (string obj) =>
                 {
-                    //TODO rewrite loader so that it 
                     if (obj == CurrentResourceName())
                     {
-                        //if (Game.Player.Name.Contains("Misstake"))
-                        //{
-                        //    Utils.ReleaseWriteLine("You are developer!");
-                        //    Utils.IsDeveloper = true;
-                        //}
                         Utils.Debug = bool.Parse(API.GetConvar("elsplus_debug", "false"));
                         try
                         {
@@ -74,7 +70,6 @@ namespace ELS
                             await Delay(250);
                             _FileLoader.RunLoader(obj);
                             await Delay(250);
-                            //Screen.ShowNotification($"Welcome {LocalPlayer.Name}\n ELS Plus\n\n ELS Plus is Licensed under LGPL 3.0\n\nMore inforomation can be found at http://els.friendsincode.com");
                             SetupConnections();
                             await Delay(250);
                             TriggerServerEvent(EventNames.VcfSyncServer, Game.Player.ServerId);
@@ -130,7 +125,7 @@ namespace ELS
                 }
             });
 
-            EventHandlers[EventNames.VcfSyncClient] += new Action<List<dynamic>>((vcfs) =>
+            EventHandlers[EventNames.VcfSyncClient] += new Action<List<object>>((vcfs) =>
              {
                  VCF.ParseVcfs(vcfs);
              });
@@ -139,23 +134,25 @@ namespace ELS
             {
                 VCF.ParsePatterns(patterns);
             }));
-            EventHandlers["ELS:FullSync:NewSpawnWithData"] += new Action<System.Dynamic.ExpandoObject>((a) =>
+            EventHandlers["ELS:FullSync:NewSpawnWithData"] += new Action<IDictionary<string, object>>((a) =>
             {
                 VehicleManager.Instance.SyncAllVehiclesOnFirstSpawn(a);
             });
         }
 
         [EventHandler("baseevents:leftVehicle")]
-        public async void LeftVehicle(int veh, int currentSeat, string displayName, int netId, int model)
+        public void LeftVehicle()
         {
+            CurrentSeat = null;
             CurrentVehicle = null;
         }
 
         [EventHandler("baseevents:enteredVehicle")]
-        public async void EnteredVehicle(int veh, int currentSeat, string displayName, int netId, int model)
+        public async void EnteredVehicle(int veh, int currentSeat, dynamic _, int netId)
         {
+            CurrentSeat = currentSeat;
             CurrentVehicle = new Vehicle(veh);
-            Utils.DebugWriteLine($"Vehicle with model {model} entered checking list. displayName: {displayName}; currentSeat: {currentSeat}; veh: {veh}; netId: {netId}");
+            //Utils.DebugWriteLine($"Vehicle with model {model} entered checking list. displayName: {displayName}; currentSeat: {currentSeat}; veh: {veh}; netId: {netId}");
             Vehicle vehicle = CurrentVehicle;
             await Delay(1000);
             try
@@ -331,6 +328,28 @@ namespace ELS
         private static Ped ped;
         private static Vector3? position;
 
+#if STATEBAG
+        [Command("els_getstate")]
+        public void GetState(int source, List<object> args, string raw)
+        {
+            try
+            {
+                if (VehicleManager.vehicleList.TryGetValue(CurrentVehicle.NetworkId, out var currentVehicle))
+                {
+                    var elsLight = currentVehicle.State["elslight"] as IDictionary<string, object>;
+                    var elsSiren = currentVehicle.State["elssiren"] as IDictionary<string, object>;
+                    Debug.WriteLine(JsonConvert.SerializeObject(elsLight));
+                    Debug.WriteLine(JsonConvert.SerializeObject(elsSiren));
+                }
+            }
+            catch(Exception e)
+            {
+                Debug.WriteLine(e.ToString());
+                Console.WriteLine(e);
+            }
+        }
+#endif
+
         [Command("vcfsync")]
         public void VcfSync()
         {
@@ -381,7 +400,7 @@ namespace ELS
             return Function.Call<string>(Hash.GET_CURRENT_RESOURCE_NAME);
         }
 
-        #region Callbacks for GUI
+#region Callbacks for GUI
         public void RegisterNUICallback(string msg, Func<IDictionary<string, object>, CallbackDelegate, CallbackDelegate> callback)
         {
             CitizenFX.Core.Debug.WriteLine($"Registering NUI EventHandler for {msg}");
@@ -400,7 +419,7 @@ namespace ELS
             });
 
         }
-        #endregion
+#endregion
 
         internal static Player Player
         {

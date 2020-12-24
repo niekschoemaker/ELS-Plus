@@ -8,6 +8,8 @@ using ELSShared;
 using Newtonsoft.Json;
 using Shared;
 using System.Dynamic;
+using System.Linq;
+using System.Diagnostics;
 
 namespace ELS_Server
 {
@@ -110,6 +112,31 @@ namespace ELS_Server
             }
         }
 
+        public IDictionary<string, object> GetData(int networkID)
+        {
+            if (_cachedData.TryGetValue(networkID, out var data)) {
+                return data;
+            }
+
+            return null;
+        }
+
+        [Conditional("STATEBAG")]
+        public void UpdateState(int networkID, IDictionary<string, object> data = null)
+        {
+            data = data ?? GetData(networkID);
+            if (data == null)
+            {
+                return;
+            }
+
+            var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(networkID));
+            foreach (var p in data)
+            {
+                vehicle.State["els" + p.Key] = p.Value;
+            }
+        }
+
         [EventHandler("ELS:ONDEBUG")]
         public void OnDebugMessage([FromSource] Player player, string message)
         {
@@ -123,9 +150,8 @@ namespace ELS_Server
             _cachedData[networkId] = dataDict;
             _lastPlayerData[networkId] = player;
 
+            UpdateState(networkId, dataDict);
             TriggerClientEvent(EventNames.NewFullSyncData, expandoData, networkId, int.Parse(player.Handle));
-            //var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(networkId));
-            //vehicle.State["els"] = new { applied = true };
         }
 
         [EventHandler(EventNames.FullSycnRequestAll)]
@@ -135,48 +161,43 @@ namespace ELS_Server
         }
 
         [EventHandler(EventNames.FullSyncRequestOne)]
-        public void FullSyncRequestOne([FromSource] Player player, int networkId)
+        public void FullSyncRequestOne([FromSource] Player player, int networkID)
         {
-            if (_cachedData.TryGetValue(networkId, out var data))
+            if (_cachedData.TryGetValue(networkID, out var data))
             {
-                if (_lastPlayerData.TryGetValue(networkId, out var player1)) {
-                    TriggerClientEvent(player, EventNames.NewFullSyncData, data, networkId, int.Parse(player1.Handle));
+                if (_lastPlayerData.TryGetValue(networkID, out var player1)) {
+                    TriggerClientEvent(player, EventNames.NewFullSyncData, data, networkID, int.Parse(player1.Handle));
                 }
             }
         }
 
         [EventHandler(EventNames.LightSyncBroadcast)]
-        public void LightSyncBroadcast([FromSource] Player player, ExpandoObject expandoData, int NetworkID)
+        public void LightSyncBroadcast([FromSource] Player player, IDictionary<string, object> newData, int networkID)
         {
             try
             {
-                var dataDict = (IDictionary<string, object>)expandoData;
-                if (!_cachedData.TryGetValue(NetworkID, out var data))
+                if (!_cachedData.TryGetValue(networkID, out var cachedData))
                 {
-                    data = new Dictionary<string, object>()
-                        {
-                            { DataNames.Light, dataDict }
-                        };
-                    _cachedData.Add(NetworkID, data);
+                    cachedData = new Dictionary<string, object>();
+                    _cachedData.Add(networkID, cachedData);
                 }
 
-                if (!data.TryGetValue(DataNames.Light, out var light))
+                if (!cachedData.TryGetValue(DataNames.Light, out var light))
                 {
                     light = new Dictionary<string, object>();
-                    data.Add(DataNames.Light, light);
+                    cachedData.Add(DataNames.Light, light);
                 }
 
                 var lightDict = light as IDictionary<string, object>;
 
-                foreach (var a in expandoData)
+                foreach (var a in newData)
                 {
                     lightDict[a.Key] = a.Value;
                 }
-                _lastPlayerData[NetworkID] = player;
+                _lastPlayerData[networkID] = player;
 
-                TriggerClientEvent(EventNames.NewLightSyncData, expandoData, NetworkID, int.Parse(player.Handle));
-                //var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(NetworkID));
-                //vehicle.State["els"] = new { applied = true };
+                UpdateState(networkID, cachedData);
+                TriggerClientEvent(EventNames.NewLightSyncData, newData, networkID, int.Parse(player.Handle));
             }
             catch (Exception e)
             {
@@ -187,37 +208,32 @@ namespace ELS_Server
         }
 
         [EventHandler(EventNames.SirenSyncBroadcast)]
-        public void SirenSyncBroadCast([FromSource] Player player, ExpandoObject expandoData, int NetworkID)
+        public void SirenSyncBroadCast([FromSource] Player player, IDictionary<string, object> newData, int networkID)
         {
             try
             {
-                var dataDict = (IDictionary<string, object>)expandoData;
 
                 // Make sure the cachedData exists and otherwise create it
-                if (!_cachedData.TryGetValue(NetworkID, out var data))
+                if (!_cachedData.TryGetValue(networkID, out var cachedData))
                 {
-                    data = new Dictionary<string, object>()
-                        {
-                            { DataNames.Siren, dataDict }
-                        };
-                    _cachedData.Add(NetworkID, data);
+                    cachedData = new Dictionary<string, object>();
+                    _cachedData.Add(networkID, cachedData);
                 }
 
-                if (!data.TryGetValue(DataNames.Siren, out var siren))
+                if (!cachedData.TryGetValue(DataNames.Siren, out var siren))
                 {
                     siren = new Dictionary<string, object>();
-                    data.Add(DataNames.Siren, siren);
+                    cachedData.Add(DataNames.Siren, siren);
                 }
                 var sirenDict = (IDictionary<string, object>)siren;
-                foreach (var a in expandoData)
+                foreach (var a in newData)
                 {
                     sirenDict[a.Key] = a.Value;
                 }
-                _lastPlayerData[NetworkID] = player;
+                _lastPlayerData[networkID] = player;
 
-                TriggerClientEvent(EventNames.NewSirenSyncData, expandoData, NetworkID, int.Parse(player.Handle));
-                //var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(NetworkID));
-                //vehicle.State["els"] = new { applied = true };
+                UpdateState(networkID, cachedData);
+                TriggerClientEvent(EventNames.NewSirenSyncData, newData, networkID, int.Parse(player.Handle));
             }
             catch (Exception e)
             {
@@ -240,7 +256,8 @@ namespace ELS_Server
         {
             RemoveTimer = API.GetGameTimer();
             var removeList = new List<int>();
-            foreach (var a in _cachedData)
+            // Convert ToArray to avoid Collection modified errors
+            foreach (var a in _cachedData.ToArray())
             {
                 await Delay(0);
                 var _vehicle = API.NetworkGetEntityFromNetworkId(a.Key);
