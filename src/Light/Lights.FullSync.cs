@@ -177,13 +177,13 @@ namespace ELS.Light
             {
                 _stage.SetStage(int.Parse(stage.ToString()));
             }
-            if (SpotLight != null)
+            if (SpotLight != null && data.TryGetValue(DataNames.Spotlight, out var spotlight))
             {
-                SpotLight.SetData((IDictionary<string, object>)data[DataNames.Spotlight]);
+                SpotLight.SetData((IDictionary<string, object>)spotlight);
             }
-            if (Scene != null)
+            if (Scene != null && data.TryGetValue(DataNames.Scene, out var sceneLight))
             {
-                Scene.SetData((IDictionary<string, object>)data[DataNames.Scene]);
+                Scene.SetData((IDictionary<string, object>)sceneLight);
             }
         }
     }
