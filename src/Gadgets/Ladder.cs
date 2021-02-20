@@ -111,11 +111,12 @@ namespace ELS.Gadgets
 
         internal void RaiseLowerLadder()
         {
-            if(lights.Vehicle == null)
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle == null)
             {
                 return;
             }
-            VerticalAngle = API.GetVehicleDoorAngleRatio(lights.Vehicle.Handle, LadderVerticalIndex);
+            VerticalAngle = API.GetVehicleDoorAngleRatio(vehicle.Handle, LadderVerticalIndex);
             if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.Ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 VerticalAngle += 0.029999999f;
@@ -126,9 +127,9 @@ namespace ELS.Gadgets
 
                 VerticalAngle -= 0.029999999f;
             }
-            if (API.IsVehicleDoorFullyOpen(lights.Vehicle.Handle, LadderVerticalIndex) || VerticalAngle <= 0.80000001f)
+            if (API.IsVehicleDoorFullyOpen(vehicle.Handle, LadderVerticalIndex) || VerticalAngle <= 0.80000001f)
             {
-                API.SetVehicleDoorControl(lights.Vehicle.Handle, LadderVerticalIndex, _speed, VerticalAngle);
+                API.SetVehicleDoorControl(vehicle.Handle, LadderVerticalIndex, _speed, VerticalAngle);
             }
             if (VerticalAngle > .25)
             {
@@ -138,11 +139,13 @@ namespace ELS.Gadgets
 
         internal void RotateLadder()
         {
-            if(lights.Vehicle == null)
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle == null)
             {
                 return;
             }
-            VerticalAngle = API.GetVehicleDoorAngleRatio(lights.Vehicle.Handle, LadderVerticalIndex);
+            
+            VerticalAngle = API.GetVehicleDoorAngleRatio(vehicle.Handle, LadderVerticalIndex);
             if (Game.IsControlPressed(0, Control.PhoneUp) && ELS.Ped.IsSittingInELSVehicle() && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 HorizontalAngle += 0.029999999f;
@@ -153,9 +156,9 @@ namespace ELS.Gadgets
 
                 HorizontalAngle -= 0.019999999f;
             }
-            if (API.IsVehicleDoorFullyOpen(lights.Vehicle.Handle, LadderHorizontalIndex) || VerticalAngle <= 0.80000001f)
+            if (API.IsVehicleDoorFullyOpen(vehicle.Handle, LadderHorizontalIndex) || VerticalAngle <= 0.80000001f)
             {
-                API.SetVehicleDoorControl(lights.Vehicle.Handle, LadderHorizontalIndex, _speed, VerticalAngle);
+                API.SetVehicleDoorControl(vehicle.Handle, LadderHorizontalIndex, _speed, VerticalAngle);
             }
             if (HorizontalAngle > .25 || HorizontalAngle < -.25)
             {

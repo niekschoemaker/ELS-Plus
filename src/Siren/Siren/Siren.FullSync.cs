@@ -8,16 +8,16 @@ namespace ELS.Siren
     {
         public void SetData(IDictionary<string, object> data)
         {
+            if (data.TryGetValue(DataNames.dual_siren, out var dualSiren))
+            {
+                dual_siren = (bool)dualSiren;
+            }
             if (data.TryGetValue(DataNames._mainSiren, out var mainSiren))
             {
                 _mainSiren.SetData((IDictionary<string, object>)mainSiren);
             }
             if (data.TryGetValue(DataNames._tones, out var tones)) {
                 _tones.SetData((IDictionary<string,object>)tones);
-            }
-            if(data.TryGetValue(DataNames.dual_siren, out var dualSiren))
-            {
-                dual_siren = (bool)dualSiren;
             }
         }
 

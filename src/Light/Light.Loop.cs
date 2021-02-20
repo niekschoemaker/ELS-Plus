@@ -13,10 +13,10 @@ namespace ELS.Light
 
         public async void ControlTicker()
         {
-            if (!Vehicle.Exists(Vehicle))
+            if (!Vehicle.Exists(ElsVehicle.Vehicle))
             {
                 Init();
-                if (!Vehicle.Exists(Vehicle))
+                if (!Vehicle.Exists(ElsVehicle.Vehicle))
                 {
                     return;
                 }
@@ -38,10 +38,10 @@ namespace ELS.Light
 
         public async void Ticker()
         {
-            if (!Vehicle.Exists(Vehicle))
+            if (!Vehicle.Exists(ElsVehicle.Vehicle))
             {
                 Init();
-                if (!Vehicle.Exists(Vehicle))
+                if (!Vehicle.Exists(ElsVehicle.Vehicle))
                 {
                     return;
                 }

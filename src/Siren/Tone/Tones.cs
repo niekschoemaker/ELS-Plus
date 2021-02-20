@@ -29,11 +29,26 @@ namespace ELS.Siren
 
         public void SetData(IDictionary<string, object> data)
         {
-            horn.SetState((bool)data[DataNames.Horn]);
-            tone1.SetState((bool)data[DataNames.tone1]);
-            tone2.SetState((bool)data[DataNames.tone2]);
-            tone3.SetState((bool)data[DataNames.tone3]);
-            tone4.SetState((bool)data[DataNames.tone4]);
+            if (data.TryGetValue(DataNames.Horn, out var _horn))
+            {
+                horn.SetState((bool)_horn);
+            }
+            if (data.TryGetValue(DataNames.tone1, out var tone1State))
+            {
+                tone1.SetState((bool)tone1State);
+            }
+            if (data.TryGetValue(DataNames.tone2, out var tone2State))
+            {
+                tone2.SetState((bool)tone2State);
+            }
+            if (data.TryGetValue(DataNames.tone3, out var tone3State))
+            {
+                tone3.SetState((bool)tone3State);
+            }
+            if (data.TryGetValue(DataNames.tone4, out var tone4State))
+            {
+                tone4.SetState((bool)tone4State);
+            }
         }
 
         public void RunTick()

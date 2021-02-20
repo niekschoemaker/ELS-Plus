@@ -1,14 +1,9 @@
 ﻿using CitizenFX.Core;
-using CitizenFX.Core.Native;
-using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-using CitizenFX.Core.UI;
 using ELS.configuration;
-using System.Collections;
-using System.Collections.Generic;
-using ELS.NUI;
 using ELS.Light;
+using ELS.NUI;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace ELS.Siren
 {
@@ -30,11 +25,19 @@ namespace ELS.Siren
         public Siren(ELSVehicle vehicle,Vcfroot vcfroot, [Optional]IDictionary<string,object> data, IPatterns patt)
         {
             _vcf = vcfroot;
+            if (_vcf is null)
+            {
+                Utils.ReleaseWriteLine($"VCF for vehicle {vehicle?.Vehicle?.DisplayName} with netId {vehicle?.NetworkId} is null!");
+                return;
+            }
             _elsVehicle = vehicle;
             _patternController = patt;
-#if DEBUG
-            Utils.DebugWriteLine(_vehicle.DisplayName);
-#endif
+            Utils.DebugWriteLine($"{_vcf.SOUNDS.MainHorn.AudioString}");
+            Utils.DebugWriteLine($"{_vcf.SOUNDS.SrnTone1.AudioString}");
+            Utils.DebugWriteLine($"{_vcf.SOUNDS.SrnTone2.AudioString}");
+            Utils.DebugWriteLine($"{_vcf.SOUNDS.SrnTone3.AudioString}");
+            Utils.DebugWriteLine($"{_vcf.SOUNDS.SrnTone4.AudioString}");
+
             _tones = new Tones
             {
                 horn = new Tone(_vcf.SOUNDS.MainHorn.AudioString, _elsVehicle, ToneType.Horn, true, soundSet: _vcf.SOUNDS.MainHorn.SoundSet),
@@ -47,7 +50,10 @@ namespace ELS.Siren
             _mainSiren = new MainSiren(ref _tones);
             dual_siren = false;
 
-            if (data != null) SetData(data);
+            if (data != null)
+            {
+                SetData(data);
+            }
             ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
             ElsUiPanel.SetUiDesc("--", "HRN");
         }

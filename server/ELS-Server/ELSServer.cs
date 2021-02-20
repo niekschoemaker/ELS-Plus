@@ -16,17 +16,13 @@ namespace ELS_Server
     public class ELSServer : BaseScript
     {
         Dictionary<int, IDictionary<string, object>> _cachedData = new Dictionary<int, IDictionary<string, object>>();
-        Dictionary<int, Player> _lastPlayerData = new Dictionary<int, Player>();
-        long GameTimer;
-        long RemoveTimer;
+        Dictionary<int, string> _lastPlayerData = new Dictionary<int, string>();
         string serverId;
         string currentVersion;
         public ELSServer()
         {
             currentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             Utils.ReleaseWriteLine($"Welcome to ELS+ {currentVersion} for FiveM");
-            GameTimer = API.GetGameTimer();
-            Utils.ReleaseWriteLine($"Setting Game time is {GameTimer}");
             serverId = API.LoadResourceFile(API.GetCurrentResourceName(), "ELSId");
 
             if (string.IsNullOrEmpty(serverId))
@@ -49,16 +45,6 @@ namespace ELS_Server
                     TriggerEvent(EventNames.VcfSyncServer, p.Handle);
                 }
             }), true);
-
-            EventHandlers[EventNames.VcfSyncServer] += new Action<int>(async (int source) =>
-            {
-                // Let niet op deze event naam, ehhhh, iets met vage glitch met string naam of zo, this works
-                TriggerClientEvent(Players[source], EventNames.VcfSyncClient, VcfSync.VcfData);
-                // Triggering Latent twice in one tick appears to cause problems with event name
-                await Delay(1000);
-                TriggerClientEvent(Players[source], "ELS:PatternSync:Client", CustomPatterns.Patterns);
-
-            });
 
             EventHandlers[EventNames.RemoveStale] += new Action<int, bool>(async (int netid, bool dead) =>
             {
@@ -137,10 +123,11 @@ namespace ELS_Server
             }
         }
 
-        [EventHandler("ELS:ONDEBUG")]
-        public void OnDebugMessage([FromSource] Player player, string message)
+        [EventHandler(EventNames.VcfSyncServer)]
+        public void VcfSyncServer([FromSource] Player player)
         {
-            Utils.ReleaseWriteLine(message);
+            TriggerClientEvent(player, EventNames.VcfSyncClient, VcfSync.VcfData);
+            TriggerClientEvent(player, "ELS:PatternSync:Client", CustomPatterns.Patterns);
         }
 
         [EventHandler(EventNames.FullSyncBroadcast)]
@@ -148,7 +135,8 @@ namespace ELS_Server
         {
             var dataDict = (IDictionary<string, object>)expandoData;
             _cachedData[networkId] = dataDict;
-            _lastPlayerData[networkId] = player;
+            CheckModel(networkId);
+            _lastPlayerData[networkId] = player.Handle;
 
             UpdateState(networkId, dataDict);
             TriggerClientEvent(EventNames.NewFullSyncData, expandoData, networkId, int.Parse(player.Handle));
@@ -166,7 +154,7 @@ namespace ELS_Server
             if (_cachedData.TryGetValue(networkID, out var data))
             {
                 if (_lastPlayerData.TryGetValue(networkID, out var player1)) {
-                    TriggerClientEvent(player, EventNames.NewFullSyncData, data, networkID, int.Parse(player1.Handle));
+                    TriggerClientEvent(player, EventNames.NewFullSyncData, data, networkID, int.Parse(player1));
                 }
             }
         }
@@ -182,6 +170,8 @@ namespace ELS_Server
                     _cachedData.Add(networkID, cachedData);
                 }
 
+                CheckModel(networkID);
+
                 if (!cachedData.TryGetValue(DataNames.Light, out var light))
                 {
                     light = new Dictionary<string, object>();
@@ -194,7 +184,8 @@ namespace ELS_Server
                 {
                     lightDict[a.Key] = a.Value;
                 }
-                _lastPlayerData[networkID] = player;
+
+                _lastPlayerData[networkID] = player.Handle;
 
                 UpdateState(networkID, cachedData);
                 TriggerClientEvent(EventNames.NewLightSyncData, newData, networkID, int.Parse(player.Handle));
@@ -207,18 +198,42 @@ namespace ELS_Server
             }
         }
 
+        public void CheckModel(int networkId)
+        {
+            var cachedData = _cachedData[networkId];
+            if (!cachedData.ContainsKey(DataNames.Model))
+            {
+                var vehicle = new Vehicle(API.NetworkGetEntityFromNetworkId(networkId));
+                cachedData[DataNames.Model] = vehicle.Model;
+            }
+        }
+
+        [Command("test_siren")]
+        public void TestSirenCommand(Player player, string[] args)
+        {
+            if (API.GetConvar("dev_server", "false") != "true")
+            {
+                return;
+            }
+            var vehicle = (Vehicle)Entity.FromHandle(API.GetVehiclePedIsIn(player.Character.Handle, true));
+            TriggerClientEvent(EventNames.NewSirenSyncData, new Dictionary<string, object> {
+                { "", null }
+            }, vehicle.NetworkId, 0);
+        }
+
+
         [EventHandler(EventNames.SirenSyncBroadcast)]
         public void SirenSyncBroadCast([FromSource] Player player, IDictionary<string, object> newData, int networkID)
         {
             try
             {
-
                 // Make sure the cachedData exists and otherwise create it
                 if (!_cachedData.TryGetValue(networkID, out var cachedData))
                 {
                     cachedData = new Dictionary<string, object>();
                     _cachedData.Add(networkID, cachedData);
                 }
+                CheckModel(networkID);
 
                 if (!cachedData.TryGetValue(DataNames.Siren, out var siren))
                 {
@@ -230,7 +245,7 @@ namespace ELS_Server
                 {
                     sirenDict[a.Key] = a.Value;
                 }
-                _lastPlayerData[networkID] = player;
+                _lastPlayerData[networkID] = player.Handle;
 
                 UpdateState(networkID, cachedData);
                 TriggerClientEvent(EventNames.NewSirenSyncData, newData, networkID, int.Parse(player.Handle));
@@ -254,23 +269,16 @@ namespace ELS_Server
 
         private async Task Server_Tick()
         {
-            RemoveTimer = API.GetGameTimer();
-            var removeList = new List<int>();
-            // Convert ToArray to avoid Collection modified errors
-            foreach (var a in _cachedData.ToArray())
+            foreach (var a in _cachedData.Keys.ToList())
             {
                 await Delay(0);
-                var _vehicle = API.NetworkGetEntityFromNetworkId(a.Key);
+                var _vehicle = API.NetworkGetEntityFromNetworkId(a);
                 if (!API.DoesEntityExist(_vehicle))
                 {
-                    removeList.Add(a.Key);
+                    Utils.ReleaseWriteLine($"Removing netId: {a}");
+                    TriggerClientEvent(EventNames.RemoveStale, a);
+                    _cachedData.Remove(a);
                 }
-            }
-            foreach (var a in removeList)
-            {
-                Utils.ReleaseWriteLine($"Removing netId: {a}");
-                TriggerClientEvent(EventNames.RemoveStale, a);
-                _cachedData.Remove(a);
             }
             await Delay(30000);
         }

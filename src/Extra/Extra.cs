@@ -133,9 +133,9 @@ namespace ELS.Extra
         {
             if (_Id == 10)
             {
-                return lights.Vehicle.Bones[$"extra_ten"].Position;
+                return lights.ElsVehicle.Vehicle.Bones[$"extra_ten"].Position;
             }
-            return lights.Vehicle.Bones[$"extra_{_Id}"].Position;
+            return lights.ElsVehicle.Vehicle.Bones[$"extra_{_Id}"].Position;
         }
 
         internal int Delay { get; set; }
@@ -144,7 +144,7 @@ namespace ELS.Extra
             private set
             {
                 _state = value;
-                if (lights.Vehicle == null)
+                if (lights.ElsVehicle.Vehicle == null)
                 {
                     return;
                 }
@@ -177,13 +177,17 @@ namespace ELS.Extra
 
         internal void SetState(bool state)
         {
-            this.State = state;
+            State = state;
         }
 
         private void SetTrue()
         {
-            API.SetVehicleExtra(lights.Vehicle.Handle, _Id, false);
-            if (ELS.Ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.Vehicle.NetworkId)
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle != null)
+            {
+                API.SetVehicleExtra(vehicle.Handle, _Id, false);
+            }
+            if (ELS.Ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 ElsUiPanel.SendLightData(true, $"#extra{_Id}", _extraInfo.Color);
             }
@@ -191,7 +195,11 @@ namespace ELS.Extra
 
         private void SetFalse()
         {
-            API.SetVehicleExtra(lights.Vehicle.Handle, _Id, true);
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle != null)
+            {
+                API.SetVehicleExtra(vehicle.Handle, _Id, true);
+            }
             if (ELS.Ped?.IsInPoliceVehicle ?? false && ELS.CurrentVehicle != null && ELS.CurrentVehicle.NetworkId == lights.ElsVehicle.NetworkId)
             {
                 ElsUiPanel.SendLightData(false, $"#extra{_Id}", _extraInfo.Color);
@@ -200,13 +208,10 @@ namespace ELS.Extra
 
         int count = 0;
         int flashrate = 0;
-        int allowflash = 1;
-        bool firstTick = true;
         internal async void ExtraTicker()
         {
             if (flashrate != 0 && ELS.GameTime - flashrate >= Delay)
             {
-                allowflash = 1;
                 if (IsPatternRunning)
                 {
                     if (count <= Pattern.Length - 1)
@@ -247,32 +252,23 @@ namespace ELS.Extra
             }
         }
 
-        private Vector3 dirVector;
-        private float anglehorizontal = 0f;
-        private float anngleVirtical = 0f;
-
         internal void DrawEnvLight()
         {
             if (!IsPatternRunning)
             {
                 return;
             }
-            if (lights.Vehicle == null)
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle == null)
             {
-#if DEBUG
-                Utils.DebugWriteLine("Vehicle is null!!!");
-#endif
                 return;
             }
-            var off = lights.Vehicle.GetPositionOffset(GetBone());
+            var off = vehicle.GetPositionOffset(GetBone());
             if (off == null)
             {
-#if DEBUG
-                Utils.DebugWriteLine("Bone is null for some reason!!!");
-#endif
                 return;
             }
-            var extraoffset = lights.Vehicle.GetOffsetPosition(off + new Vector3(_extraInfo.OffsetX, _extraInfo.OffsetY, _extraInfo.OffsetZ));
+            var extraoffset = vehicle.GetOffsetPosition(off + new Vector3(_extraInfo.OffsetX, _extraInfo.OffsetY, _extraInfo.OffsetZ));
             API.DrawLightWithRange(extraoffset.X, extraoffset.Y, extraoffset.Z, Color['r'], Color['g'], Color['b'], Global.EnvLightRng, Global.EnvLightInt);
         }
 
@@ -329,10 +325,7 @@ namespace ELS.Extra
                     Pattern = "";
                     IsPatternRunning = false;
                     lights.SpotLight = new SpotLight(lights);
-
-#if DEBUG
-                    Utils.DebugWriteLine("Takedown lights setup");
-#endif
+                    Utils.DebugWriteLine("Spotlight/Scenelight setup");
 
                     break;
                 case 12:
@@ -341,10 +334,7 @@ namespace ELS.Extra
                     Pattern = "";
                     IsPatternRunning = false;
                     lights.Scene = new Scene(lights);
-
-#if DEBUG
-                    Utils.DebugWriteLine("Scene lights setup");
-#endif
+                    Utils.DebugWriteLine("Takedown lights setup");
 
                     break;
             }
@@ -385,12 +375,7 @@ namespace ELS.Extra
 
         internal void CleanUp()
         {
-            if (!lights.ElsVehicle.Exists())
-            {
-                lights.Vehicle = lights.ElsVehicle.Vehicle;
-            }
-
-            if (lights.Vehicle == null)
+            if (lights.ElsVehicle.Vehicle == null)
             {
                 return;
             }

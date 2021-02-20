@@ -54,11 +54,9 @@ namespace ELS.configuration
             {
                 var vcf = obj as IDictionary<string, object>;
                 await BaseScript.Delay(50);
-#if DEBUG
-                Utils.DebugWriteLine($"Currently adding {vcf.Item2} from {vcf.Item1}");
-#endif
                 load(SettingsType.Type.VCF, vcf["Item2"] as string, vcf["Item3"] as string, vcf["Item1"] as string);
             }
+            ELS.Loaded = true;
         }
 
         static void load(SettingsType.Type type, string name, string Data, string ResourceName)
@@ -82,7 +80,7 @@ namespace ELS.configuration
                 //data.filename = Path.GetFileNameWithoutExtension(name);
                 if (data.root == null)
                 {
-                    CitizenFX.Core.Debug.WriteLine("Null issue");
+                    Debug.WriteLine("Null issue");
                     return;
                 }
                 Dictionary<string, NanoXMLNode> subNodes = new Dictionary<string, NanoXMLNode>();
@@ -106,9 +104,6 @@ namespace ELS.configuration
                 #endregion
 #region Interface
 
-#if DEBUG
-                Utils.DebugWriteLine("Parsing Interface");
-#endif
                 try
                 {
                     foreach (NanoXMLNode n in subNodes["INTERFACE"].SubNodes)
@@ -137,9 +132,6 @@ namespace ELS.configuration
                 #endregion
 
 #region Extras Override
-#if DEBUG
-                Utils.DebugWriteLine("Parsing Extras");
-#endif
 
                 try
                 {

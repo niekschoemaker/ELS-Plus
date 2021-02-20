@@ -17,6 +17,26 @@ namespace ELS.Board
         internal int BoardDoorIndex { get; set; }
         internal bool BoardRaised { get; set; }
 
+        private void RaiseBoard()
+        {
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle != null)
+            {
+                API.SetVehicleDoorOpen(vehicle.Handle, BoardDoorIndex, false, false);
+            }
+            BoardRaised = true;
+        }
+
+        private void LowerBoard()
+        {
+            var vehicle = lights.ElsVehicle.Vehicle;
+            if (vehicle != null)
+            {
+                API.SetVehicleDoorShut(vehicle.Handle, BoardDoorIndex, false);
+            }
+            BoardRaised = false;
+        }
+
         internal bool RaiseBoardNow
         {
             get
@@ -25,22 +45,14 @@ namespace ELS.Board
             }
             set
             {
-                if (lights.Vehicle == null)
-                {
-                    return;
-                }
                 _raise = value;
                 if (RaiseBoardNow)
                 {
-                    // RaiseBoard();
-                    API.SetVehicleDoorOpen(lights.Vehicle.Handle, BoardDoorIndex, false, false);
-                    BoardRaised = true;
+                    RaiseBoard();
                 }
                 else
                 {
-                    //LowerBoard();
-                    API.SetVehicleDoorShut(lights.Vehicle.Handle, BoardDoorIndex, false);
-                    BoardRaised = false;
+                    LowerBoard();
                 }
             }
         }

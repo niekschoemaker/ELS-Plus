@@ -20,9 +20,21 @@ namespace ELS.Siren
 
             public void SetData(IDictionary<string, object> data)
             {
-                currentTone = int.Parse(data[DataNames.CurrentTone].ToString());
-                interupted = (bool)data[DataNames.Interrupted];
-                _enable = (bool)data[DataNames._enable];
+                if (data.TryGetValue(DataNames.CurrentTone, out var tone))
+                {
+                    setMainTone(int.Parse(tone.ToString()));
+                    currentTone = int.Parse(tone.ToString());
+                }
+                if (data.TryGetValue(DataNames.Interrupted, out var interrupted))
+                {
+                    interupted = (bool)interrupted;
+                }
+                if (data.TryGetValue(DataNames._enable, out var enable))
+                {
+                    SetEnable((bool)enable);
+                }
+                
+                
             }
         }
     }

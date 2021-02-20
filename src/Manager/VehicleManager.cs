@@ -164,7 +164,10 @@ namespace ELS.Manager
 #endif
                 return;
             }
-            vehicleList[netId].SyncUi();
+            if (vehicleList.TryGetValue(netId, out var vehicle))
+            {
+                vehicle.SyncUi();
+            }
         }
 
         internal static void SyncRequestReply(Commands command, int NetworkId)

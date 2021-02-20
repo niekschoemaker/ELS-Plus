@@ -8,6 +8,7 @@ namespace Shared
 {
     public static class DataNames
     {
+        public const string Model = "m";
         public const string PrimaryPattern = "1";
         public const string SecondaryPattern = "2";
         public const string WarningPattern = "3";

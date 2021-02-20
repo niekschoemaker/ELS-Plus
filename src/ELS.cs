@@ -46,6 +46,7 @@ namespace ELS
         private bool _firstTick = false;
         internal static string ServerId;
         internal static UserSettings userSettings;
+        public static bool Loaded { get; set; }
 
         public ELS()
         {
@@ -99,7 +100,6 @@ namespace ELS
                         }
                         catch (Exception e)
                         {
-                            TriggerServerEvent($"ELS:ONDEBUG", e.ToString());
                             Screen.ShowNotification($"ERROR:{e.Message}");
                             Screen.ShowNotification($"ERROR:{e.StackTrace}");
                             Tick -= Class1_Tick;
@@ -108,6 +108,10 @@ namespace ELS
                         }
                     }
                 });
+            if (API.GetConvar("dev_server", "false") == "true")
+            {
+                Utils.IsDeveloper = true;
+            }
 
         }
         int lastVehicle = -1;
@@ -126,9 +130,9 @@ namespace ELS
             });
 
             EventHandlers[EventNames.VcfSyncClient] += new Action<List<object>>((vcfs) =>
-             {
-                 VCF.ParseVcfs(vcfs);
-             });
+            {
+                VCF.ParseVcfs(vcfs);
+            });
 
             EventHandlers.Add("ELS:PatternSync:Client", new Action<List<dynamic>>((patterns) =>
             {
@@ -169,7 +173,10 @@ namespace ELS
 
                         VehicleManager.SyncUI(netId);
 
-                        VehicleManager.vehicleList[netId].SetInofVeh(true);
+                        if (VehicleManager.vehicleList.TryGetValue(netId, out var elsVehicle))
+                        {
+                            elsVehicle.SetInofVeh(true);
+                        }
 
                         VehicleManager.SyncRequestReply(RemoteEventManager.Commands.FullSync, netId);
                     }
@@ -183,21 +190,41 @@ namespace ELS
         }
 
         [EventHandler(EventNames.NewLightSyncData)]
-        public void SetVehicleLightData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
+        public async void SetVehicleLightData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
         {
+            while (!Loaded)
+            {
+                await Delay(0);
+            }
             VehicleManager.Instance.SetVehicleLightData(dataDic, NetworkId, PlayerId);
         }
 
         [EventHandler(EventNames.NewSirenSyncData)]
-        public void SetVehicleSirenData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
+        public async void SetVehicleSirenData(IDictionary<string, object> dataDic, int NetworkId, int PlayerId)
         {
+            while (!Loaded)
+            {
+                await Delay(0);
+            }
             VehicleManager.Instance.SetVehicleSirenData(dataDic, NetworkId, PlayerId);
         }
 
         [EventHandler(EventNames.NewFullSyncData)]
-        public void SetVehicleFullSyncData(IDictionary<string, object> dataDic, int networkId, int PlayerId)
+        public async void SetVehicleFullSyncData(IDictionary<string, object> dataDic, int networkId, int PlayerId)
         {
-            VehicleManager.Instance.SetVehicleSyncData(dataDic, networkId, PlayerId);
+            try
+            {
+                while (!Loaded)
+                {
+                    await Delay(0);
+                }
+                VehicleManager.Instance.SetVehicleSyncData(dataDic, networkId, PlayerId);
+            }
+            catch (Exception e)
+            {
+                Utils.ReleaseWriteLine(e.ToString());
+            }
+            
         }
 
         [EventHandler(EventNames.FullSyncNewSpawn)]
@@ -255,6 +282,25 @@ namespace ELS
             {
                 Utils.ReleaseWriteLine("Exception caught via vehicle exited");
             }
+        }
+
+        [Command("els_data")]
+        public void GetData(string[] args)
+        {
+            int number;
+            if (args.Length < 1 || !int.TryParse(args[0], out number))
+            {
+                Debug.WriteLine("Invalid args");
+                return;
+            }
+
+            if (!VehicleManager.vehicleList.TryGetValue(number, out var elsVehicle))
+            {
+                Debug.WriteLine($"Voertuig met id {number} niet gevonden in els lijst!");
+                return;
+            }
+
+            Debug.WriteLine(JsonConvert.SerializeObject(elsVehicle.GetData()));
         }
 
         [Command("els_developer")]
@@ -464,6 +510,10 @@ namespace ELS
                     RegisterNUICallback("togglePrimary", ElsUiPanel.TooglePrimary);
                     RegisterNUICallback("keyPress", ElsUiPanel.KeyPress);
                     _firstTick = true;
+                }
+                if (!Loaded)
+                {
+                    return;
                 }
                 GameTime = Game.GameTime;
                 Player = null;

@@ -79,7 +79,7 @@ namespace ELS
 
         internal static void SendEvent(Commands type, ELSVehicle vehicle, bool state)
         {
-            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId} : {state}");
+            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId} of type {type} : {state}");
             Manager.VehicleManager.SyncRequestReply(type, vehicle.NetworkId);
         }
 
@@ -91,7 +91,7 @@ namespace ELS
 
         internal static void SendLightEvent(ELSVehicle vehicle, string key, object value)
         {
-            Debug.WriteLine($"sendding data for netID {key} : {value}");
+            Debug.WriteLine($"sendding LightSync data for netID {vehicle.NetworkId}; {key} : {value}");
             var data = new Dictionary<string, object>
             {
                 { key, value }
@@ -101,13 +101,24 @@ namespace ELS
 
         internal static void SendLightEvent(ELSVehicle vehicle, Dictionary<string, object> data)
         {
-            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId}");
+            Debug.WriteLine($"sendding LightSync data for netID {vehicle.NetworkId}");
             FullSync.FullSyncManager.SendLightBroadcast(data, vehicle.NetworkId);
+        }
+
+        internal static void SendSirenEvent(ELSVehicle vehicle, string key, object value)
+        {
+            Debug.WriteLine($"sendding SirenSync data for netID {vehicle.NetworkId}; {key} : {value}");
+
+            var data = new Dictionary<string, object>
+            {
+                { key, value }
+            };
+            SendSirenEvent(vehicle, data);
         }
 
         internal static void SendSirenEvent(ELSVehicle vehicle, Dictionary<string, object> data)
         {
-            Debug.WriteLine($"sendding data for netID {vehicle.NetworkId}");
+            Debug.WriteLine($"sendding SirenSync data for netID {vehicle.NetworkId}");
             FullSync.FullSyncManager.SendSirenBroadcast(data, vehicle.NetworkId);
         }
     }

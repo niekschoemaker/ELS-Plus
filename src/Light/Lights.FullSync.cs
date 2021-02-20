@@ -1,4 +1,5 @@
 ﻿using ELS.FullSync;
+using Newtonsoft.Json;
 using Shared;
 using System;
 using System.Collections.Generic;
@@ -117,49 +118,65 @@ namespace ELS.Light
                     e.SetData((IDictionary<string, object>)wrn[$"{e.Id}"]);
                 }
             }
-            try
+            if (data.TryGetValue(DataNames.SteadyBurn, out var sbrn))
             {
-                if (data.TryGetValue(DataNames.SteadyBurn, out var sbrn))
+                try
                 {
+                    if (_extras.SteadyBurn == null)
+                    {
+                        CreateMissingExtra(10);
+                    }
                     _extras.SteadyBurn.SetData((IDictionary<string, object>)sbrn);
                 }
-            }
-            catch (Exception e)
-            {
-                Utils.DebugWriteLine($"SBRN error: {e.Message}");
-            }
-            try
-            {
-                if (data.TryGetValue(DataNames.SceneLights, out var scl))
+                catch (Exception e)
                 {
+                    Utils.DebugWriteLine($"SBRN error: {e}");
+                }
+            }
+            if (data.TryGetValue(DataNames.SceneLights, out var scl))
+            {
+                try
+                {
+                    if (_extras.SceneLights == null)
+                    {
+                        CreateMissingExtra(12);
+                    }
                     _extras.SceneLights.SetData((IDictionary<string, object>)scl);
                 }
-            }
-            catch (Exception e)
-            {
-                Utils.DebugWriteLine($"SCL error: {e.Message}");
-            }
-            try
-            {
-                if (data.TryGetValue(DataNames.TakedownLights, out var tdl))
+                catch (Exception e)
                 {
+                    Utils.DebugWriteLine($"SCL error: {e}");
+                }
+            }
+            if (data.TryGetValue(DataNames.TakedownLights, out var tdl))
+            {
+                try
+                {
+                    if (_extras.TakedownLights == null)
+                    {
+                        CreateMissingExtra(11);
+                    }
                     _extras.TakedownLights.SetData((IDictionary<string, object>)tdl);
                 }
-            }
-            catch (Exception e)
-            {
-                Utils.DebugWriteLine($"TDL error: {e.Message}");
-            }
-            try
-            {
-                if (data.TryGetValue(DataNames.Board, out var brd))
+                catch (Exception e)
                 {
-                    _extras.Board.SetData((IDictionary<string, object>)brd);
+                    Utils.DebugWriteLine($"TDL error: {e}");
                 }
             }
-            catch (Exception e)
+            if (data.TryGetValue(DataNames.Board, out var brd))
             {
-                Utils.DebugWriteLine($"BRD error: {e.Message}");
+                try
+                {
+                    if (_extras.Board == null)
+                    {
+                        CreateBoard();
+                    }
+                    _extras.Board.SetData((IDictionary<string, object>)brd);
+                }
+                catch (Exception e)
+                {
+                    Utils.DebugWriteLine($"BRD error: {e}");
+                }
             }
             if (data.TryGetValue(DataNames.PrimaryPattern, out var prmPatt))
             {

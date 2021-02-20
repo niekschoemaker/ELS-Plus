@@ -449,23 +449,24 @@ namespace ELS.Light
         internal async void ToggleLightStage()
         {
             await _stage.NextStage(false);
-            SetStage();
         }
 
         internal async void ToggleLightStageInverse()
         {
             await _stage.NextStage(true);
-            SetStage();
         }
 
-        private void SetStage()
+        internal void SetStage()
         {
             int[] extras = _stage.GetStage2Extras();
             switch (_stage.CurrentStage)
             {
                 case 0:
                     SetGTASirens(false);
-                    ElsUiPanel.ToggleUiBtnState(false, "WW");
+                    if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                    {
+                        ElsUiPanel.ToggleUiBtnState(false, "WW");
+                    }
                     //foreach (Extra.Extra e in _extras.PRML.Values)
                     for (int i = 0; i < _extras.PrimaryLights.Count; i++)
                     {
@@ -492,16 +493,22 @@ namespace ELS.Light
                     prmLights = false;
                     secLights = false;
                     wrnLights = false;
-                    ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
-                    ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
-                    ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
-                    ElsUiPanel.PlayUiSound("sirenclick");
+                    if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                    {
+                        ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                        ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                        ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                        ElsUiPanel.PlayUiSound("sirenclick");
+                    }
                     break;
                 case 1:
                     if (Vcfroot.MISC.DfltSirenLtsActivateAtLstg == 1)
                     {
                         SetGTASirens(true);
-                        ElsUiPanel.ToggleUiBtnState(true, "WW");
+                        if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                        {
+                            ElsUiPanel.ToggleUiBtnState(true, "WW");
+                        }
                     }
                     //foreach (Extra.Extra e in _extras.SECL.Values)
                     for (int i = 0; i < _extras.SecondaryLights.Count; i++)
@@ -547,16 +554,22 @@ namespace ELS.Light
                     prmLights = false;
                     secLights = true;
                     wrnLights = false;
-                    ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
-                    ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
-                    ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
-                    ElsUiPanel.PlayUiSound("sirenclick");
+                    if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                    {
+                        ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                        ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                        ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                        ElsUiPanel.PlayUiSound("sirenclick");
+                    }
                     break;
                 case 2:
                     if (Vcfroot.MISC.DfltSirenLtsActivateAtLstg == 2)
                     {
                         SetGTASirens(true);
-                        ElsUiPanel.ToggleUiBtnState(true, "WW");
+                        if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                        {
+                            ElsUiPanel.ToggleUiBtnState(true, "WW");
+                        }
                     }
                     //foreach (Extra.Extra e in _extras.PRML.Values)
                     for (int i = 0; i < _extras.PrimaryLights.Count; i++)
@@ -629,16 +642,22 @@ namespace ELS.Light
                     prmLights = true;
                     secLights = true;
                     wrnLights = false;
-                    ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
-                    ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
-                    ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
-                    ElsUiPanel.PlayUiSound("sirenclick");
+                    if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                    {
+                        ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                        ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                        ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                        ElsUiPanel.PlayUiSound("sirenclick");
+                    }
                     break;
                 case 3:
                     if (Vcfroot.MISC.DfltSirenLtsActivateAtLstg == 3)
                     {
                         SetGTASirens(true);
-                        ElsUiPanel.ToggleUiBtnState(true, "WW");
+                        if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                        {
+                            ElsUiPanel.ToggleUiBtnState(true, "WW");
+                        }
                     }
                     //foreach (Extra.Extra e in _extras.SECL.Values)
                     for (int i = 0; i < _extras.SecondaryLights.Count; i++)
@@ -659,14 +678,20 @@ namespace ELS.Light
                         {
                             _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
                             secLights = false;
-                            ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                            if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                            {
+                                ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                            }
                         }
                         else
                         {
                             _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = false;
                             _extras.SecondaryLights.ElementAt(i).Value.IsPatternRunning = true;
                             secLights = true;
-                            ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                            if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                            {
+                                ElsUiPanel.ToggleUiBtnState(secLights, "SECL");
+                            }
                         }
                     }
                     //foreach (Extra.Extra e in _extras.PRML.Values)
@@ -687,14 +712,20 @@ namespace ELS.Light
                         {
                             _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
                             prmLights = false;
-                            ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                            if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                            {
+                                ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                            }
                         }
                         else
                         {
                             _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = false;
                             _extras.PrimaryLights.ElementAt(i).Value.IsPatternRunning = true;
                             prmLights = true;
-                            ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                            if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                            {
+                                ElsUiPanel.ToggleUiBtnState(prmLights, "PRML");
+                            }
                         }
                     }
                     //foreach (Extra.Extra e in _extras.WRNL.Values)
@@ -715,14 +746,20 @@ namespace ELS.Light
                         {
                             _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
                             wrnLights = false;
-                            ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                            if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                            {
+                                ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                            }
                         }
                         else
                         {
                             _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = false;
                             _extras.WarningLights.ElementAt(i).Value.IsPatternRunning = true;
                             wrnLights = true;
-                            ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                            if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                            {
+                                ElsUiPanel.ToggleUiBtnState(wrnLights, "WRNL");
+                            }
                         }
                     }
                     if (Vcfroot.PRML.LightingFormat.ToLower().Equals("chp"))
@@ -736,7 +773,10 @@ namespace ELS.Light
                     {
                         _extras.SteadyBurn.SetState(true);
                     }
-                    ElsUiPanel.PlayUiSound("sirenclick");
+                    if (ELS.CurrentVehicle != null && ELS.CurrentVehicle == ElsVehicle.Vehicle)
+                    {
+                        ElsUiPanel.PlayUiSound("sirenclick");
+                    }
                     break;
             }
         }

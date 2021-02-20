@@ -128,7 +128,7 @@ namespace ELS.Light
                         Debug.WriteLine($"{e.Id} error {ex.Message}");
                     }
                 }
-                if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.NetworkId == Vehicle.NetworkId)
+                if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.NetworkId == ElsVehicle.Vehicle?.NetworkId)
                 {
                     if (Vcfroot.PRML.LightingFormat.Equals("custom"))
                     {
@@ -219,7 +219,7 @@ namespace ELS.Light
                         Debug.WriteLine($"{e.Id} error {ex.Message}");
                     }
                 }
-                if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.NetworkId == Vehicle.NetworkId)
+                if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.NetworkId == ElsVehicle.Vehicle?.NetworkId)
                 {
                     if (Vcfroot.SECL.LightingFormat.Equals("custom"))
                     {
@@ -295,7 +295,7 @@ namespace ELS.Light
                         Debug.WriteLine($"{e.Id} error {ex.Message}");
                     }
                 }
-                if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.NetworkId == Vehicle.NetworkId)
+                if (Game.PlayerPed.IsInPoliceVehicle && Game.PlayerPed.CurrentVehicle.NetworkId == ElsVehicle.Vehicle?.NetworkId)
                 {
                     if (Vcfroot.SECL.LightingFormat.Equals("custom"))
                     {

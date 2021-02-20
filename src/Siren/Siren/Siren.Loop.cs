@@ -14,10 +14,10 @@ namespace ELS.Siren
         {
             Game.DisableControlThisFrame(0, configuration.ElsConfiguration.KBBindings.Sound_Ahorn);
             AirHornControlsKB();
+            ManualTone0ControlsKB();
             ManualTone1ControlsKB();
             ManualTone2ControlsKB();
             ManualTone3ControlsKB();
-            ManualTone4ControlsKB();
             ManualSoundControlsKB();
             if (lights._stage.CurrentStage == 3)
             {

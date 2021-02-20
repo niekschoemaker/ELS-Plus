@@ -74,82 +74,84 @@ namespace ELS.Siren
             }
         }
 
-        void SirenTone1Logic(bool pressed, bool disableControls = false)
+        bool SirenTone0Logic(bool pressed, bool disableControls = false)
         {
-            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon1);
-
-            if (pressed && _tones.tone1.AllowUse)
+            if (!_tones.tone1.AllowUse)
             {
-                if (_mainSiren._enable) //Is the MainSiren Active
-                {
-                    if (_mainSiren.currentTone != 0)
-                    {
-                        _mainSiren.setMainTone(0);
-                        if (_vcf.PRML.ForcedPatterns.SrnTone1.Enabled)
-                        {
-                            _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone1.IntPattern;
-                        }
-                        if (_vcf.SECL.ForcedPatterns.SrnTone1.Enabled)
-                        {
-                            _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone1.IntPattern;
-                        }
-                        if (_vcf.WRNL.ForcedPatterns.SrnTone1.Enabled)
-                        {
-                            _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone1.IntPattern;
-                        }
-                    }
-                    if (_mainSiren._enable && dual_siren)
-                    {
-#if DEBUG
-                        Utils.DebugWriteLine("Setting Dual Siren tone 2");
-#endif
-                        _tones.tone4.SetState(false);
-                        _tones.tone1.SetState(false);
-                        _tones.tone2.SetState(true);
-                        _tones.tone3.SetState(false);
-                    }
-                    ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
-                    ElsUiPanel.ToggleUiBtnState(_mainSiren._enable, "SRN");
-                    if (Global.BtnClicksBtwnSrnTones)
-                    {
-                        ElsUiPanel.PlayUiSound("sirenclickoff");
-                    }
-                }
+                return false;
+            }
+            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon1);
+            if (!_mainSiren._enable || _mainSiren.currentTone == 0)
+            {
+                return false;
             }
 
-        }
-        void SirenTone2Logic(bool pressed, bool disableControls = false)
-        {
-            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon2);
-
-            if (pressed && _tones.tone2.AllowUse)
+            if (pressed)
             {
-
-                if (_mainSiren._enable)
+                _mainSiren.setMainTone(0);
+                if (_vcf.PRML.ForcedPatterns.SrnTone1.Enabled)
                 {
-                    if (_mainSiren.currentTone != 1)
-                    {
-                        _mainSiren.setMainTone(1);
-                        if (_vcf.PRML.ForcedPatterns.SrnTone2.Enabled)
-                        {
-                            _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone2.IntPattern;
-                        }
-                        if (_vcf.SECL.ForcedPatterns.SrnTone2.Enabled)
-                        {
-                            _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone2.IntPattern;
-                        }
-                        if (_vcf.WRNL.ForcedPatterns.SrnTone2.Enabled)
-                        {
-                            _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone2.IntPattern;
-                        }
-                    }
-                    
+                    _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone1.IntPattern;
                 }
-                if (_mainSiren._enable && dual_siren)
+                if (_vcf.SECL.ForcedPatterns.SrnTone1.Enabled)
                 {
-#if DEBUG
-                    Utils.DebugWriteLine("Setting Dual Siren tone 3");
-#endif
+                    _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone1.IntPattern;
+                }
+                if (_vcf.WRNL.ForcedPatterns.SrnTone1.Enabled)
+                {
+                    _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone1.IntPattern;
+                }
+                if (dual_siren)
+                {
+                    _tones.tone4.SetState(false);
+                    _tones.tone1.SetState(false);
+                    _tones.tone2.SetState(true);
+                    _tones.tone3.SetState(false);
+                }
+                ElsUiPanel.SetUiDesc(_mainSiren.MainTones[_mainSiren.currentTone].Type, "SRN");
+                ElsUiPanel.ToggleUiBtnState(_mainSiren._enable, "SRN");
+                if (Global.BtnClicksBtwnSrnTones)
+                {
+                    ElsUiPanel.PlayUiSound("sirenclickoff");
+                }
+                return true;
+            }
+            return false;
+
+        }
+
+        bool SirenTone1Logic(bool pressed, bool disableControls = false)
+        {
+            if (!_tones.tone2.AllowUse)
+            {
+                return false;
+            }
+            if (disableControls)
+            {
+                Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon2);
+            }
+            if (!_mainSiren._enable || _mainSiren.currentTone == 1)
+            {
+                return false;
+            }
+
+            if (pressed)
+            {
+                _mainSiren.setMainTone(1);
+                if (_vcf.PRML.ForcedPatterns.SrnTone2.Enabled)
+                {
+                    _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone2.IntPattern;
+                }
+                if (_vcf.SECL.ForcedPatterns.SrnTone2.Enabled)
+                {
+                    _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone2.IntPattern;
+                }
+                if (_vcf.WRNL.ForcedPatterns.SrnTone2.Enabled)
+                {
+                    _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone2.IntPattern;
+                }
+                if (dual_siren)
+                {
                     _tones.tone4.SetState(false);
                     _tones.tone1.SetState(false);
                     _tones.tone2.SetState(false);
@@ -161,37 +163,42 @@ namespace ELS.Siren
                 {
                     ElsUiPanel.PlayUiSound("sirenclickoff");
                 }
+                return true;
             }
+            return false;
         }
-        void SirenTone3Logic(bool pressed, bool disableControls = false)
+
+        bool SirenTone2Logic(bool pressed, bool disableControls = false)
         {
-            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon3);
-            if (pressed && _tones.tone3.AllowUse)
+            if (!_tones.tone3.AllowUse)
             {
-                if (_mainSiren._enable)
+                return false;
+            }
+            if (disableControls)
+            {
+                Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon3);
+            }
+            if (!_mainSiren._enable || _mainSiren.currentTone == 2)
+            {
+                return false;
+            }
+            if (pressed)
+            {
+                _mainSiren.setMainTone(2);
+                if (_vcf.PRML.ForcedPatterns.SrnTone3.Enabled)
                 {
-                    if (_mainSiren.currentTone != 2)
-                    {
-                        _mainSiren.setMainTone(2);
-                        if (_vcf.PRML.ForcedPatterns.SrnTone3.Enabled)
-                        {
-                            _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone3.IntPattern;
-                        }
-                        if (_vcf.SECL.ForcedPatterns.SrnTone3.Enabled)
-                        {
-                            _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone3.IntPattern;
-                        }
-                        if (_vcf.WRNL.ForcedPatterns.SrnTone3.Enabled)
-                        {
-                            _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone3.IntPattern;
-                        }
-                    }
+                    _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone3.IntPattern;
                 }
-                if (_mainSiren._enable && dual_siren)
+                if (_vcf.SECL.ForcedPatterns.SrnTone3.Enabled)
                 {
-#if DEBUG
-                    Utils.DebugWriteLine("Setting Dual Siren tone 4");
-#endif
+                    _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone3.IntPattern;
+                }
+                if (_vcf.WRNL.ForcedPatterns.SrnTone3.Enabled)
+                {
+                    _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone3.IntPattern;
+                }
+                if (dual_siren)
+                {
                     _tones.tone3.SetState(false);
                     _tones.tone1.SetState(false);
                     _tones.tone2.SetState(false);
@@ -203,42 +210,48 @@ namespace ELS.Siren
                 {
                     ElsUiPanel.PlayUiSound("sirenclickoff");
                 }
-            }
-            if (Global.BtnClicksBtwnSrnTones)
-            {
-                ElsUiPanel.PlayUiSound("sirenclickoff");
-            }
-        }
-        void SirenTone4Logic(bool pressed, bool disableControls = false)
-        {
-            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon4);
-            if (pressed && _tones.tone4.AllowUse)
-            {
-                if (_mainSiren._enable)
+                if (Global.BtnClicksBtwnSrnTones)
                 {
-                    if (_mainSiren.currentTone != 3)
-                    {
-                        _mainSiren.setMainTone(3);
-                        if (_vcf.PRML.ForcedPatterns.SrnTone4.Enabled)
-                        {
-                            _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone4.IntPattern;
-                        }
-                        if (_vcf.SECL.ForcedPatterns.SrnTone4.Enabled)
-                        {
-                            _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone4.IntPattern;
-                        }
-                        if (_vcf.WRNL.ForcedPatterns.SrnTone4.Enabled)
-                        {
-                            _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone4.IntPattern;
-                        }
-                    }
+                    ElsUiPanel.PlayUiSound("sirenclickoff");
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        bool SirenTone3Logic(bool pressed, bool disableControls = false)
+        {
+            if (!_tones.tone4.AllowUse)
+            {
+                return false;
+            }
+            if (disableControls)
+            {
+                Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Snd_SrnTon4);
+            }
+            if (!_mainSiren._enable || _mainSiren.currentTone == 3)
+            {
+                return false;
+            }
+            if (pressed)
+            {
+                _mainSiren.setMainTone(3);
+                if (_vcf.PRML.ForcedPatterns.SrnTone4.Enabled)
+                {
+                    _patternController.CurrentPrmPattern = _vcf.PRML.ForcedPatterns.SrnTone4.IntPattern;
+                }
+                if (_vcf.SECL.ForcedPatterns.SrnTone4.Enabled)
+                {
+                    _patternController.CurrentSecPattern = _vcf.SECL.ForcedPatterns.SrnTone4.IntPattern;
+                }
+                if (_vcf.WRNL.ForcedPatterns.SrnTone4.Enabled)
+                {
+                    _patternController.CurrentWrnPattern = _vcf.WRNL.ForcedPatterns.SrnTone4.IntPattern;
                 }
                 
-                if (_mainSiren._enable && dual_siren)
+                if (dual_siren)
                 {
-#if DEBUG
-                    Utils.DebugWriteLine("Setting Dual Siren tone 1");
-#endif
                     _tones.tone4.SetState(true);
                     _tones.tone1.SetState(false);
                     _tones.tone2.SetState(false);
@@ -250,12 +263,19 @@ namespace ELS.Siren
                 {
                     ElsUiPanel.PlayUiSound("sirenclickoff");
                 }
+                return true;
             }
+
+            return false;
         }
 
         private void MainSirenToggleLogic(bool toggle, bool disableControls = false)
         {
-            if (disableControls) Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Toggle_SIRN);
+            if (disableControls)
+            {
+                Game.DisableControlThisFrame(0, ElsConfiguration.KBBindings.Toggle_SIRN);
+            }
+
             if (toggle)
             {
                 _mainSiren.SetEnable(!_mainSiren._enable);

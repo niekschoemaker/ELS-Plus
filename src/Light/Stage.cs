@@ -12,8 +12,9 @@ namespace ELS.Light
         private int vehicleId;
         private string ActivationType = "manual";
         private int stage = 0;
+        private Lights _lights;
 
-        internal Stage(configuration.Lights prml, configuration.Lights secl, configuration.Lights wrnl, int veh, string acttype)
+        internal Stage(configuration.Lights prml, configuration.Lights secl, configuration.Lights wrnl, int veh, string acttype, Lights lights)
         {
             PRML = prml;
             SECL = secl;
@@ -21,6 +22,7 @@ namespace ELS.Light
             CurrentStage = 0;
             vehicleId = veh;
             ActivationType = acttype.ToLower();
+            _lights = lights;
         }
 
         internal int CurrentStage
@@ -120,6 +122,7 @@ namespace ELS.Light
         internal void SetStage(int stage)
         {
             CurrentStage = stage;
+            _lights.SetStage();
         }
 
         internal int[] GetStage2Extras()

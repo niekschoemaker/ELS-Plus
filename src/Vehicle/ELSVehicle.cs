@@ -32,13 +32,15 @@ namespace ELS
                 vehicle = value;
             }
         }
-        private Vcfroot _vcf;
+        internal Vcfroot _vcf;
         private int _lastTry = -1000;
         public bool IsSirenActive = false;
         internal int cachedNetId;
+        IDictionary<string, object> cachedData = null;
 
         public ELSVehicle(int handle, int netId, [Optional] IDictionary<string, object> data) : base(handle)
         {
+            cachedData = data;
             cachedNetId = netId;
             if (API.DoesEntityExist(handle))
             {
@@ -54,8 +56,18 @@ namespace ELS
                 Init(handle);
             }
 
+            if (_vcf == null && data != null && data.TryGetValue(DataNames.Model, out var model) && VCF.ELSVehicle.TryGetValue((int)model, out var vcf))
+            {
+                _vcf = vcf.root;
+            }
+
             _light = new Light.Lights(this, _vcf);
-            _siren = new Siren.Siren(this, _vcf, (IDictionary<string, object>)data?[DataNames.Siren], _light);
+            IDictionary<string, object> sirenData = null;
+            if (data != null && data.TryGetValue(DataNames.Siren, out var rawData))
+            {
+                sirenData = (IDictionary<string, object>)rawData;
+            }
+            _siren = new Siren.Siren(this, _vcf, sirenData, _light);
 
             if (cachedNetId == 0)
             {
@@ -88,17 +100,19 @@ namespace ELS
                 return;
             }
             _vehicle = new Vehicle(handle);
+            Utils.DebugWriteLine($"Running init of vehicle: {_vehicle.NetworkId}");
             if (!Vehicle.Exists(_vehicle))
             {
                 _vehicle = null;
                 IsInitialized = false;
                 return;
             }
+            API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
 #if STATEBAG
             State = _vehicle.State;
 #endif
+            
             ModelLoaded();
-            API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
             API.SetVehRadioStation(_vehicle.Handle, "OFF");
             API.SetVehicleRadioEnabled(_vehicle.Handle, false);
             if (_vehicle.DisplayName == "CARNOTFOUND")
@@ -120,14 +134,7 @@ namespace ELS
                 _vcf = VCF.ELSVehicle[_vehicle.Model].root;
             }
 
-            try
-            {
-                API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
-            }
-            catch
-            {
-                Utils.ReleaseWriteLine("ELSVehicle.cs:Repair Fix is not enabled on this client");
-            }
+            API.SetVehicleAutoRepairDisabled(_vehicle.Handle, true);
 
             IsInitialized = true;
         }
@@ -146,7 +153,7 @@ namespace ELS
                 if (getVehicleTimer.Expired && !Vehicle.Exists(_vehicle) && API.NetworkDoesNetworkIdExist(cachedNetId))
                 {
                     var handle = API.NetworkGetEntityFromNetworkId(cachedNetId);
-                    CitizenFX.Core.Debug.WriteLine($"Attempting to init vehicle: net: {cachedNetId} ({handle})");
+                    Debug.WriteLine($"Attempting to init vehicle: net: {cachedNetId} ({handle})");
                     Init(handle);
                     getVehicleTimer.Limit = 2000;
                 }
@@ -156,14 +163,7 @@ namespace ELS
 
         public Vehicle GetVehicle()
         {
-            if (getVehicleTimer.Expired && !Vehicle.Exists(_vehicle) && API.NetworkDoesNetworkIdExist(cachedNetId))
-            {
-                var handle = API.NetworkGetEntityFromNetworkId(cachedNetId);
-                CitizenFX.Core.Debug.WriteLine($"Attempting to init vehicle: net: {cachedNetId} ({handle})");
-                Init(handle);
-                getVehicleTimer.Limit = 2000;
-            }
-            return _vehicle;
+            return Vehicle;
         }
 
         internal bool TryGetVehicle(out Vehicle vehicle)
@@ -172,59 +172,55 @@ namespace ELS
             return vehicle != null;
         }
 
-        internal void RunControlTick()
+        internal bool TryInitVehicle()
         {
-            if (!IsInitialized || !Vehicle.Exists(_vehicle))
+            if (IsInitialized && Vehicle.Exists(_vehicle))
             {
-                if (ELS.GameTime - _lastTry > 1000)
+                return true;
+            }
+            if (ELS.GameTime - _lastTry > 1000)
+            {
+                _vehicle = null;
+                if (API.NetworkDoesNetworkIdExist(cachedNetId))
                 {
-                    _vehicle = null;
-                    if (API.NetworkDoesNetworkIdExist(cachedNetId))
-                    {
-                        Init(API.NetworkGetEntityFromNetworkId(cachedNetId));
-                    }
-                    else
-                    {
-                        _lastTry = ELS.GameTime;
-                        return;
-                    }
+                    Init(API.NetworkGetEntityFromNetworkId(cachedNetId));
+                    return IsInitialized;
                 }
                 else
                 {
-                    return;
+                    _lastTry = ELS.GameTime;
+                    return false;
                 }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        internal void RunControlTick()
+        {
+            if (!TryInitVehicle())
+            {
+                return;
             }
             _siren.ControlTicker(_light);
             _light.ControlTicker();
+
+            if (_siren._mainSiren._enable && _light._stage.CurrentStage != 3 && ELS.GameTime - lastAutoDisable > 1000)
+            {
+                lastAutoDisable = ELS.GameTime;
+                Utils.DeveloperWriteLine("Disabling siren because stage not 3");
+                _siren._mainSiren.SetEnable(false);
+                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, this, true);
+            }
         }
 
         DateTime lastRemovalTry = DateTime.Now;
         bool oldSirenState = false;
         internal void RunTick()
         {
-            if (!IsInitialized || !Vehicle.Exists(_vehicle))
-            {
-                if (ELS.GameTime - _lastTry > 1000)
-                {
-                    _vehicle = null;
-                    IsInitialized = false;
-                    if (API.NetworkDoesNetworkIdExist(cachedNetId))
-                    {
-                        _lastTry = ELS.GameTime;
-                        Init(API.NetworkGetEntityFromNetworkId(cachedNetId));
-                    }
-                    else
-                    {
-                        _lastTry = ELS.GameTime;
-                        return;
-                    }
-                }
-                else
-                {
-                    return;
-                }
-            }
-            if (!IsInitialized || !Vehicle.Exists(_vehicle))
+            if (!TryInitVehicle())
             {
                 return;
             }
@@ -265,14 +261,6 @@ namespace ELS
             }
 
             _light.Ticker();
-
-            if (_siren._mainSiren._enable && _light._stage.CurrentStage != 3 && ELS.GameTime - lastAutoDisable > 1000)
-            {
-                lastAutoDisable = ELS.GameTime;
-                Utils.DeveloperWriteLine("Disabling siren because stage not 3");
-                _siren._mainSiren.SetEnable(false);
-                RemoteEventManager.SendEvent(RemoteEventManager.Commands.MainSiren, this, true);
-            }
         }
 
         internal Vector3 GetBonePosistion()

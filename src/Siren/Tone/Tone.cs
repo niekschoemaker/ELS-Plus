@@ -30,7 +30,7 @@ namespace ELS.Siren
             _entity = entity;
             _file = file;
             _soundSet = soundSet;
-            Utils.ReleaseWriteLine($"siren: {type}; soundSet: {soundSet}");
+            Utils.ReleaseWriteLine($"siren: {type}; soundSet: {_soundSet}; file: {_file}");
             SetState(state);
             AllowUse = allow;
             switch (type)

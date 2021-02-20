@@ -19,7 +19,7 @@ namespace ELS.Light
             get { return _on; }
             set
             {
-
+                if (_on == value) return;
                 _on = value;
                 if (!iLight.Vcfroot.MISC.SceneLights.IlluminateSidesOnly)
                 {
@@ -47,31 +47,33 @@ namespace ELS.Light
         {
 
             TurnedOn = (bool)data[DataNames.TurnedOn];
-#if DEBUG
-            Utils.DebugWriteLine($"Got scene data for {iLight._vehicle.GetNetworkId()}");
-#endif
         }
 
         public void RunTick()
         {
-            var loff = iLight.Vehicle.GetPositionOffset(iLight.Vehicle.Bones[$"window_lf"].Position);
-            var lspotoffset = iLight.Vehicle.GetOffsetPosition(loff + new Vector3(-0.5f, -0.5f, 0.5f));
+            var vehicle = iLight.ElsVehicle.Vehicle;
+            if (vehicle == null)
+            {
+                return;
+            }
+            var loff = vehicle.GetPositionOffset(vehicle.Bones[$"window_lf"].Position);
+            var lspotoffset = vehicle.GetOffsetPosition(loff + new Vector3(-0.5f, -0.5f, 0.5f));
 
-            float lhx = (float)((double)lspotoffset.X + 5 * Math.Cos(((double)-180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
-            float lhy = (float)((double)lspotoffset.Y + 5 * Math.Sin(((double)-180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
-            float lvz = (float)((double)lspotoffset.Z + 5 * Math.Sin((double)-180 * Math.PI / 180.0));
+            float lhx = (float)(lspotoffset.X + 5 * Math.Cos(((double)-180 + vehicle.Rotation.Z) * Math.PI / 180.0));
+            float lhy = (float)(lspotoffset.Y + 5 * Math.Sin(((double)-180 + vehicle.Rotation.Z) * Math.PI / 180.0));
+            float lvz = (float)(lspotoffset.Z + 5 * Math.Sin(-180 * Math.PI / 180.0));
 
             Vector3 ldestinationCoords = (new Vector3(lhx, lhy, lvz));
 
             ldirVector = ldestinationCoords - lspotoffset;
             ldirVector.Normalize();
 
-            var roff = iLight.Vehicle.GetPositionOffset(iLight.Vehicle.Bones[$"window_rf"].Position);
-            var rspotoffset = iLight.Vehicle.GetOffsetPosition(roff + new Vector3(0.5f, -0.5f, 0.5f));
+            var roff = vehicle.GetPositionOffset(vehicle.Bones[$"window_rf"].Position);
+            var rspotoffset = vehicle.GetOffsetPosition(roff + new Vector3(0.5f, -0.5f, 0.5f));
 
-            float rhx = (float)((double)rspotoffset.X + 5 * - Math.Cos(((double)180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
-            float rhy = (float)((double)rspotoffset.Y + 5 * - Math.Sin(((double)180 + iLight.Vehicle.Rotation.Z) * Math.PI / 180.0));
-            float rvz = (float)((double)rspotoffset.Z + 5 * - Math.Sin((double)180 * Math.PI / 180.0));
+            float rhx = (float)(rspotoffset.X + 5 * - Math.Cos(((double)180 + vehicle.Rotation.Z) * Math.PI / 180.0));
+            float rhy = (float)(rspotoffset.Y + 5 * - Math.Sin(((double)180 + vehicle.Rotation.Z) * Math.PI / 180.0));
+            float rvz = (float)(rspotoffset.Z + 5 * - Math.Sin(180 * Math.PI / 180.0));
 
             Vector3 rdestinationCoords = (new Vector3(rhx, rhy, rvz));
 
@@ -80,8 +82,6 @@ namespace ELS.Light
 
             API.DrawSpotLightWithShadow(lspotoffset.X, lspotoffset.Y, lspotoffset.Z, ldirVector.X, ldirVector.Y, ldirVector.Z, 255, 255, 255, Global.TkdnRng, Global.TkdnInt, 0f, 100f, 1f, 1);
             API.DrawSpotLightWithShadow(rspotoffset.X, rspotoffset.Y, rspotoffset.Z, rdirVector.X, rdirVector.Y, rdirVector.Z, 255, 255, 255, Global.TkdnRng, Global.TkdnInt, 0f, 100f, 1f, 2);
-
-
         }
     }
 }
