@@ -8,7 +8,12 @@ See: https://git.friendsincode.com/PFM/ELS-Plus/issues to submit an issue or use
 - You can spawn a vehicle using /elscar {model}
 - You can obtain a list of the vehicles ELS has detected by typing /elslist and pressing F8 to view console.(Plans to make menu in progress :D)
 
+### Dependencies
 
+This version of ELS-Plus is dependant on a custom version of baseevents which can be found here:
+https://github.com/niekschoemaker/baseevents
+
+This version shouldn't break any existing behaviour, only add to it.
 
 ### Default Controls
 
